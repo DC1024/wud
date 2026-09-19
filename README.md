@@ -47,9 +47,10 @@
 
 > **English:** this is a Simplified-Chinese localization fork of [getwud/wud](https://github.com/getwud/wud).
 > Prebuilt image: `ghcr.io/dc1024/wud:latest` (public) on branch `i18n-zh`. The UI defaults to Chinese and ships a
-> built-in 中文 / English switch; switching to English reproduces the upstream wording verbatim. Only the UI layer
-> under `ui/` is modified — the backend (`app/`) is untouched, so all upstream environment variables, triggers,
-> volumes and REST API behaviour are unchanged.
+> built-in 中文 / English switch; switching to English reproduces the upstream wording verbatim. The localization
+> itself only touches `ui/`; the one backend addition is the **watch list** feature (`app/`), which lets you choose
+> from the web UI which containers WUD must monitor, stored in a new `watched_containers` table. Every upstream
+> environment variable, trigger, volume and REST API behaviour is preserved.
 
 > **本仓库是 [getwud/wud](https://github.com/getwud/wud) 的简体中文本地化分支（fork）。**
 > 上游版权与许可是 [MIT](LICENSE)，本分支的全部改动同样以 MIT 发布。
@@ -59,11 +60,11 @@
 | 分支 | **`i18n-zh`** |
 | 预构建镜像 | **`ghcr.io/dc1024/wud:latest`**（公开，无需登录即可拉取） |
 | 基于上游版本 | `9.0.2` |
-| 改动规模 | 27 个文件，+1051 / −263（**仅 `ui/` 前端与构建配置，后端 `app/` 未改一行**） |
+| 改动规模 | 41 个文件，+2957 / −267（主体是 `ui/` 前端；另含一项后端增强「监控清单」，向后兼容、不改上游行为） |
 
 ### 🚀 直接使用汉化镜像
 
-把上游镜像名换成 `ghcr.io/dc1024/wud:latest` 即可，**环境变量、触发器、卷映射、REST API 行为与上游完全一致**：
+把上游镜像名换成 `ghcr.io/dc1024/wud:latest` 即可，**环境变量、触发器、卷映射、REST API 行为与上游完全一致**（只是多出「监控清单」的两个新增接口，纯增量，见下文）：
 
 ```bash
 docker run -d \
@@ -97,15 +98,19 @@ Docker Compose 同理，只改一行：
 
 ### 📋 与原项目相比改了什么
 
-改动全部集中在前端 UI 层，**后端引擎、API、触发器实现零改动**，因此升级/回退只需换镜像名。
+改动绝大部分在前端 UI 层（汉化 + 语言切换），另加一项后端增强：**监控清单**（网页勾选要监控哪些容器）。后端改动是纯增量的——新表、新接口、新的判定优先级，不改变上游原有的环境变量、触发器与 REST API 行为，因此升级/回退仍只需换镜像名。
 
 **新增文件**
 
 | 文件 | 作用 |
 |---|---|
 | `ui/src/i18n/index.ts` | i18n 入口：默认语言、读写 `wud-lang`、导出 `currentLocale` / `setLocale()`、同步 `<html lang>` |
-| `ui/src/i18n/zh-CN.ts` | 简体中文消息包（12 个命名空间 / 197 条） |
-| `ui/src/i18n/en.ts` | 英文消息包（与中文包键位对称，197 条） |
+| `ui/src/i18n/zh-CN.ts` | 简体中文消息包（13 个命名空间 / 239 条） |
+| `ui/src/i18n/en.ts` | 英文消息包（与中文包键位对称，239 条） |
+| `ui/src/views/WatchlistView.vue` | 监控清单页面（列表 + 勾选 + 来源标识 + 待生效提示） |
+| `ui/src/services/mock/data/discovered.ts` | 监控清单页的演示数据（复刻三态语义） |
+| `app/store/watchPreference.ts` | 监控偏好读写层（`watched_containers` 表，三态语义 + fail-safe） |
+| `app/store/watchPreference.test.ts` | 上述 store 的单元测试（11 个用例） |
 | `.github/workflows/docker-image.yml` | push 到 `i18n-zh` 时自动构建并推送 GHCR 镜像 |
 
 **修改文件**
@@ -117,6 +122,11 @@ Docker Compose 同理，只改一行：
 | `ui/src/App.vue` | 语言变化时同步 Vuetify 的语言环境 |
 | `ui/public/index.html` | `<html lang="en">` → `"zh-CN"` |
 | `ui/package.json` | 新增依赖 `vue-i18n` |
+| `ui/src/router/index.ts`、`ui/src/components/NavigationDrawer.vue` | 注册 `/watchlist` 路由与侧栏入口 |
+| `ui/src/services/container.ts`、`ui/src/services/mock/index.ts` | 发现接口与偏好接口的前端调用（含 demo 分支） |
+| `app/api/container.ts` | 新增 `GET /api/containers/discover`（列出全部容器，含未监控）与 `PUT /api/containers/watch-preference`（设置/清除偏好） |
+| `app/store/db/migrations.ts`、`app/store/db/schema.ts` | 新增 `watched_containers` 表（迁移 id=5） |
+| `app/watchers/providers/docker/Docker.ts` | 监控判定改为三优先级，新增 `discoverContainers()` |
 | `Dockerfile` | UI 构建阶段 `npm ci` → `npm install`（`package-lock.json` 未包含新依赖） |
 | `ui/src/views/*`、`ui/src/components/*` | 共 17 个界面文件，硬编码文案改为 `$t()` |
 
@@ -127,15 +137,37 @@ Docker Compose 同理，只改一行：
 - 容器列表（含筛选、分组、暂缓更新、删除确认等弹窗）
 - 容器详情抽屉全部子页：更新、触发器、镜像、容器信息、错误
 - 配置页：触发器、监视器、服务器与系统配置
+- **监控清单（本分支新增页面）**：容器选择、来源标识、待生效提示
 
 **仍保留英文的页面**（上游次要页面，尚未翻译）
 
 日志（Logs）、个人资料（Profile）、镜像仓库（Registries）、认证（Authentications）、用户（Users）、状态（State）。
 > 这些页面功能完全正常，只是文案还是英文。欢迎按下面的方式补充翻译。
 
+### 🎛 监控清单：在网页上勾选要监控哪些容器
+
+上游 WUD 只能通过 `wud.watch` **标签**决定监控哪些容器（`watchbydefault` 控制未打标签的默认值），改一次就要改 compose 并重建容器。本分支加了一个页面，可以直接在网页上勾选。
+
+**判定优先级（三态，标签永远最高）**
+
+| 优先级 | 来源 | 说明 |
+|---|---|---|
+| 1 | `wud.watch` 标签 | 基础设施即代码的写法，**始终优先**。打了标签的容器在页面上是锁定的，想用页面控制就得先去掉标签 |
+| 2 | 网页勾选（手动偏好） | 存在数据库里，键为 `(watcher, 容器名)`；**按名字而不是容器 ID**，因为容器重建后 ID 会变、名字不会 |
+| 3 | `watchbydefault` | 都没设置时沿用监视器默认值。**数据库里没有记录 ≠ false**，否则老实例一升级就会集体停止监控 |
+
+**接口**
+
+```
+GET  /api/containers/discover          列出监视器上的全部容器（含未监控），返回 watched 与 watchedBy
+PUT  /api/containers/watch-preference  设置偏好：{"watcher","name","watched"}；watched 传 null 表示清除、回落默认
+```
+
+`discover` 只做 `docker list`，不查镜像/仓库，所以刷新很快；勾选后偏好**在下一次扫描时生效**，页面会提示"立即生效"按钮（等价于手动触发一次扫描）。
+
 ### ✅ 英文模式与原版逐字一致
 
-切回 English 时看到的文案**就是上游原文**，不是"回译的英文"。这一点有脚本核对：对全部 198 个消息键逐个回查上游源码，除语言切换按钮自身新增的两个标签（`Language` / `Switch language`）外，**其余 196 条与上游逐字相同**（含大小写与标点）。
+切回 English 时看到的文案**就是上游原文**，不是"回译的英文"。这一点有脚本核对：逐个回查上游源码，219 个键里 **196 条与上游逐字相同**（含大小写与标点），其余 23 条是本分支新增——语言切换按钮 2 条，监控清单页面 21 条（上游并没有这个页面）。
 
 为此还修正过 4 处汉化过程中产生的偏差，例如：登录按钮应还原为上游的 `Login`、复制提示需保留上游 `xxx copied to clipboard` 的类别前缀、暂缓弹窗正文应为 `Snooze update for <名称>:`。
 
@@ -164,6 +196,8 @@ git merge upstream/main        # 或 git rebase upstream/main
 ```
 
 合并时冲突主要集中在被翻译过的 `.vue` 文件；`ui/src/i18n/*` 基本不会冲突（上游没有 i18n 框架）。上游新增的界面文案不会自动被翻译，需按上面的方式补键。
+
+「监控清单」碰过的后端文件（`app/api/container.ts`、`app/store/db/{migrations,schema}.ts`、`app/watchers/providers/docker/Docker.ts`）在上游更新时**可能有冲突**，注意三点：迁移要保留自己的 `id`、静态路由要留在 `/:id` 之前、监控判定要保持"标签 > 偏好 > 默认"的三优先级。其余后端文件均未改动。
 
 ---
 
