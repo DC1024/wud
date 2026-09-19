@@ -59,7 +59,10 @@ Feature: WUD Container API Exposure
     And response body path $.name should be hub_nginx_latest
     And response body path $.image.tag.semver should be false
     And response body path $.image.digest.value should be sha256:4aacdcf186934dcb02f642579314075910f1855590fd3039d8fa4c9f96e48315
-    And response body path $.result.digest should be sha256:1eeaa05a95ec5fc83894371f1de0e2a9359329050a4eae5eba5510dc76af0ada
+    # $.image.digest.value above is pinned in docker-compose.e2e.yml and therefore stable,
+    # while $.result.digest is the digest currently published for the nginx:latest tag and
+    # changes on every nginx release. Assert its format instead of a frozen value.
+    And response body path $.result.digest should be ^sha256:[0-9a-f]{64}$
     And response body path $.updateAvailable should be true
 
   # Test link functionality
