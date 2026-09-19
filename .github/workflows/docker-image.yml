@@ -4,6 +4,11 @@ name: Build and push WUD (zh-CN) image
 on:
   push:
     branches: ["i18n-zh"]
+    # 纯文档改动不需要重建镜像
+    paths-ignore:
+      - "**.md"
+      - "website/**"
+      - "grafana/**"
   workflow_dispatch:
 
 permissions:

@@ -41,6 +41,132 @@
   <img src="website/docs/assets/ui.png" alt="WUD Web Dashboard UI" width="850" style="border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);" />
 </p>
 
+---
+
+## 🇨🇳 简体中文汉化分支说明
+
+> **English:** this is a Simplified-Chinese localization fork of [getwud/wud](https://github.com/getwud/wud).
+> Prebuilt image: `ghcr.io/dc1024/wud:latest` (public) on branch `i18n-zh`. The UI defaults to Chinese and ships a
+> built-in 中文 / English switch; switching to English reproduces the upstream wording verbatim. Only the UI layer
+> under `ui/` is modified — the backend (`app/`) is untouched, so all upstream environment variables, triggers,
+> volumes and REST API behaviour are unchanged.
+
+> **本仓库是 [getwud/wud](https://github.com/getwud/wud) 的简体中文本地化分支（fork）。**
+> 上游版权与许可是 [MIT](LICENSE)，本分支的全部改动同样以 MIT 发布。
+
+| | |
+|---|---|
+| 分支 | **`i18n-zh`** |
+| 预构建镜像 | **`ghcr.io/dc1024/wud:latest`**（公开，无需登录即可拉取） |
+| 基于上游版本 | `9.0.2` |
+| 改动规模 | 27 个文件，+1051 / −263（**仅 `ui/` 前端与构建配置，后端 `app/` 未改一行**） |
+
+### 🚀 直接使用汉化镜像
+
+把上游镜像名换成 `ghcr.io/dc1024/wud:latest` 即可，**环境变量、触发器、卷映射、REST API 行为与上游完全一致**：
+
+```bash
+docker run -d \
+  --name wud \
+  -p 3000:3000 \
+  -e WUD_AUTH_ADMIN_USER="admin" \
+  -e WUD_AUTH_ADMIN_PASSWORD="MySecurePassword123" \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  ghcr.io/dc1024/wud:latest
+```
+
+Docker Compose 同理，只改一行：
+
+```diff
+ services:
+   wud:
+-    image: getwud/wud:latest
++    image: ghcr.io/dc1024/wud:latest
+```
+
+### 🌐 语言切换
+
+界面**默认简体中文**，可随时切回英文：
+
+| 入口 | 说明 |
+|---|---|
+| **侧边栏底部「🌐 语言」** | 已登录时的入口。侧栏收起时显示为带悬浮提示的图标；展开时显示为列表项，右侧标注当前语言（中文 / English） |
+| **登录页卡片上方** | 未登录状态也能切换（`中文` / `English`） |
+
+选择会记在浏览器 `localStorage`（键名 `wud-lang`），刷新与重新登录都保持；同时自动同步文档 `<html lang>`，以及 Vuetify 内置文案（表格分页、空状态等）也都跟随切换。
+
+### 📋 与原项目相比改了什么
+
+改动全部集中在前端 UI 层，**后端引擎、API、触发器实现零改动**，因此升级/回退只需换镜像名。
+
+**新增文件**
+
+| 文件 | 作用 |
+|---|---|
+| `ui/src/i18n/index.ts` | i18n 入口：默认语言、读写 `wud-lang`、导出 `currentLocale` / `setLocale()`、同步 `<html lang>` |
+| `ui/src/i18n/zh-CN.ts` | 简体中文消息包（12 个命名空间 / 197 条） |
+| `ui/src/i18n/en.ts` | 英文消息包（与中文包键位对称，197 条） |
+| `.github/workflows/docker-image.yml` | push 到 `i18n-zh` 时自动构建并推送 GHCR 镜像 |
+
+**修改文件**
+
+| 文件 | 改动 |
+|---|---|
+| `ui/src/main.ts` | 挂载 vue-i18n 实例 |
+| `ui/src/plugins/vuetify.ts` | 启用 Vuetify `zhHans` 本地化，并让内置文案跟随语言 |
+| `ui/src/App.vue` | 语言变化时同步 Vuetify 的语言环境 |
+| `ui/public/index.html` | `<html lang="en">` → `"zh-CN"` |
+| `ui/package.json` | 新增依赖 `vue-i18n` |
+| `Dockerfile` | UI 构建阶段 `npm ci` → `npm install`（`package-lock.json` 未包含新依赖） |
+| `ui/src/views/*`、`ui/src/components/*` | 共 17 个界面文件，硬编码文案改为 `$t()` |
+
+**已汉化的界面**
+
+- 导航侧边栏、顶部栏、登录页
+- 首页仪表盘（容器数 / 触发器 / 监视器 / 镜像仓库统计）
+- 容器列表（含筛选、分组、暂缓更新、删除确认等弹窗）
+- 容器详情抽屉全部子页：更新、触发器、镜像、容器信息、错误
+- 配置页：触发器、监视器、服务器与系统配置
+
+**仍保留英文的页面**（上游次要页面，尚未翻译）
+
+日志（Logs）、个人资料（Profile）、镜像仓库（Registries）、认证（Authentications）、用户（Users）、状态（State）。
+> 这些页面功能完全正常，只是文案还是英文。欢迎按下面的方式补充翻译。
+
+### ✅ 英文模式与原版逐字一致
+
+切回 English 时看到的文案**就是上游原文**，不是"回译的英文"。这一点有脚本核对：对全部 198 个消息键逐个回查上游源码，除语言切换按钮自身新增的两个标签（`Language` / `Switch language`）外，**其余 196 条与上游逐字相同**（含大小写与标点）。
+
+为此还修正过 4 处汉化过程中产生的偏差，例如：登录按钮应还原为上游的 `Login`、复制提示需保留上游 `xxx copied to clipboard` 的类别前缀、暂缓弹窗正文应为 `Snooze update for <名称>:`。
+
+### 🛠 补充/修改翻译
+
+1. 在 `ui/src/i18n/zh-CN.ts` 和 `ui/src/i18n/en.ts` 中**同时**添加键（两份必须键位对称）
+2. 在对应 `.vue` 里把硬编码文案换成 `$t('命名空间.键')`（模板里用 `$t(...)`，Options API 的方法里用 `this.$t(...)`）
+3. 提交并推送到 `i18n-zh`，GitHub Actions 会自动重建镜像并覆盖 `latest` 标签
+
+**约定**：`en.ts` 的值必须与上游原文逐字一致；中文按语义自然表达，不要逐字直译。
+
+### 📦 镜像构建与发布
+
+- 由 GitHub Actions 在 push `i18n-zh` 时自动构建（约 1~3 分钟），推送到 GHCR，标签为 `latest` 与 `sha-<commit>`
+- 构建时从 `app/package.json` 读取版本号并追加 `-zh` 后缀写入 `WUD_VERSION`，因此界面显示的版本是 `9.0.2-zh` 而不是 `unknown`
+- 也可在仓库 **Actions → Build and push WUD (zh-CN) image → Run workflow** 手动触发
+- 需要 arm64 等多架构时，在 workflow 的构建步骤加上 `platforms: linux/amd64,linux/arm64`
+
+### 🔄 同步上游更新
+
+```bash
+git remote add upstream https://github.com/getwud/wud.git
+git fetch upstream
+git switch i18n-zh
+git merge upstream/main        # 或 git rebase upstream/main
+```
+
+合并时冲突主要集中在被翻译过的 `.vue` 文件；`ui/src/i18n/*` 基本不会冲突（上游没有 i18n 框架）。上游新增的界面文案不会自动被翻译，需按上面的方式补键。
+
+---
+
 ## 💡 About WUD
 
 **WUD (What's Up Docker?)** is a lightweight, proactive container update monitoring and automation tool. It continuously scans your container environments, detects image updates across public and private registries, performs semantic version analysis, and alerts you via your favorite notification channels—or triggers automatic container updates seamlessly.
