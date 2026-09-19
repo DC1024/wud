@@ -30,6 +30,10 @@ const i18n = createI18n({
  */
 export const currentLocale = i18n.global.locale as unknown as WritableComputedRef<string>;
 
+// index.html 里静态写的是 zh-CN；首屏若用户上次选的是英文，这里立刻纠正，
+// 保证 <html lang> 与实际语言一致。
+document.documentElement.setAttribute("lang", initialLocale);
+
 /**
  * 切换语言：更新全局 locale、写入 localStorage，并同步 <html lang>。
  * @param locale 目标语言（zh-CN | en）

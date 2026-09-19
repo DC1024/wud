@@ -81,7 +81,7 @@
                   :color="newVersionClass"
                   v-bind="props"
                   @click="
-                    copyToClipboard('container new version', newVersion);
+                    copyToClipboard('copy.containerNewVersion', newVersion);
                     $event.stopImmediatePropagation();
                   "
                 >
@@ -351,7 +351,10 @@ export default defineComponent({
 
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
+      (this as any).$eventBus.emit(
+        "notify",
+        this.$t("common.copied", { kind: this.$t(kind) }),
+      );
     },
 
     collapseDetail() {

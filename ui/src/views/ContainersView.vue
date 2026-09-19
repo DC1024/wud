@@ -147,7 +147,7 @@
                       :color="getNewVersionClass(item.raw || item)"
                       size="small"
                       v-bind="props"
-                      @click.stop="copyToClipboard(getNewVersion(item.raw || item))"
+                      @click.stop="copyToClipboard('copy.containerNewVersion', getNewVersion(item.raw || item))"
                       class="cursor-pointer font-weight-bold"
                     >
                       <v-icon start size="small">mdi-arrow-up-bold</v-icon>
@@ -368,7 +368,9 @@
           <v-toolbar-title class="text-white">{{ $t('containers.deleteTitle') }}</v-toolbar-title>
         </v-toolbar>
         <v-card-text class="pt-6 pb-6 text-body-1">
-          {{ $t('containers.deleteConfirm', { name: `<span class="font-weight-bold text-error">${containerToDelete?.name}</span>` }) }}
+          {{ $t('containers.deleteConfirmPrefix') }}
+          <span class="font-weight-bold text-error">{{ containerToDelete?.name }}</span>
+          {{ $t('containers.deleteConfirmSuffix') }}
           <br />
           <span class="text-caption text-grey font-italic">{{ $t('containers.deleteNote') }}</span>
         </v-card-text>
@@ -390,7 +392,7 @@
         </v-toolbar>
         <v-card-text class="pt-4 pb-2 text-body-1">
           <div>
-            {{ $t('containers.snoozeUpdate') }}
+            {{ $t('containers.snoozeFor') }}
             <span class="font-weight-bold">{{ containerToSnooze?.displayName || containerToSnooze?.name }}</span>:
           </div>
           <v-radio-group v-model="snoozeDuration" class="mt-3">
@@ -680,9 +682,12 @@ export default defineComponent({
       return "info";
     },
 
-    copyToClipboard(value: string) {
+    copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", (this as any).$t("containers.copiedNotify"));
+      (this as any).$eventBus.emit(
+        "notify",
+        (this as any).$t("common.copied", { kind: (this as any).$t(kind) }),
+      );
     },
 
     confirmDelete(container: any) {

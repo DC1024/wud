@@ -46,7 +46,7 @@ export default {
     credentials: "Credentials",
     username: "Username",
     password: "Password",
-    signIn: "Sign in",
+    signIn: "Login",
     required: "Required",
     invalid: "Invalid username or password",
     errorNotify: "Username or password error",
@@ -80,11 +80,15 @@ export default {
     tabContainer: "Container",
     tabError: "Error",
     snoozeUpdate: "Snooze update",
+    snoozeFor: "Snooze update for",
     unsnoozeUpdate: "Unsnooze update",
     deleteContainer: "Delete container",
     closeDetails: "Close details",
     deleteTitle: "Delete the container?",
-    deleteConfirm: "Delete {name} from the list?",
+    // Split around the bold container name so the markup stays in the template
+    // (upstream renders: Delete <b>name</b> from the list?)
+    deleteConfirmPrefix: "Delete",
+    deleteConfirmSuffix: "from the list?",
     deleteNote: "(The real container won't be deleted)",
     cancel: "Cancel",
     delete: "Delete",
@@ -95,7 +99,6 @@ export default {
     for1Week: "For 1 week",
     for1Month: "For 1 month",
     snooze: "Snooze",
-    copiedNotify: "container new version copied to clipboard",
     deleteError: "Error when trying to delete the container ({msg})",
     snoozedOk: "Update snoozed successfully",
     snoozeFail: "Failed to snooze update ({msg})",
@@ -177,8 +180,18 @@ export default {
     none: "No update available",
   },
   common: {
-    copied: "Copied to clipboard",
+    copied: "{kind} copied to clipboard",
     empty: "(empty)",
+  },
+  // Labels used as the {kind} of common.copied. Upstream wording kept verbatim
+  // so the English UI reads exactly like the original ("... copied to clipboard").
+  copy: {
+    containerId: "container id",
+    imageId: "image id",
+    imageDigest: "image digest",
+    containerNewVersion: "container new version",
+    updateTag: "update tag",
+    updateDigest: "update digest",
   },
   config: {
     triggers: "Triggers",

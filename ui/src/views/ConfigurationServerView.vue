@@ -239,7 +239,10 @@ export default defineComponent({
           ? JSON.stringify(value, null, 2)
           : String(value);
       navigator.clipboard.writeText(textToCopy);
-      (this as any).$eventBus?.emit("notify", this.$t("common.copied"));
+      (this as any).$eventBus?.emit(
+        "notify",
+        this.$t("common.copied", { kind: key }),
+      );
     },
 
     async refreshServer() {

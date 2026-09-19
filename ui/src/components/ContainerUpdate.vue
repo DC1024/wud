@@ -48,7 +48,7 @@
                 size="small"
                 icon
                 v-bind="props"
-                @click="copyToClipboard('update tag', result.tag)"
+                @click="copyToClipboard('copy.updateTag', result.tag)"
               >
                 <v-icon size="small">mdi-clipboard</v-icon>
               </v-btn>
@@ -80,7 +80,7 @@
                 size="small"
                 icon
                 v-bind="props"
-                @click="copyToClipboard('update digest', result.digest)"
+                @click="copyToClipboard('copy.updateDigest', result.digest)"
               >
                 <v-icon size="small">mdi-clipboard</v-icon>
               </v-btn>
@@ -182,7 +182,10 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
+      (this as any).$eventBus.emit(
+        "notify",
+        this.$t("common.copied", { kind: this.$t(kind) }),
+      );
     },
   },
 });

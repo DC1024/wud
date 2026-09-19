@@ -14,7 +14,7 @@
               size="small"
               icon
               v-bind="props"
-              @click="copyToClipboard('container id', container.id)"
+              @click="copyToClipboard('copy.containerId', container.id)"
             >
               <v-icon size="small">mdi-clipboard</v-icon>
             </v-btn>
@@ -147,7 +147,10 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
+      (this as any).$eventBus.emit(
+        "notify",
+        this.$t("common.copied", { kind: this.$t(kind) }),
+      );
     },
   },
 });

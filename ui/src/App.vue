@@ -35,7 +35,8 @@ import NavigationDrawer from "@/components/NavigationDrawer.vue";
 import SnackBar from "@/components/SnackBar.vue";
 import { getServer } from "@/services/server";
 import { useRoute } from "vue-router";
-import { useTheme } from "vuetify";
+import { useLocale, useTheme } from "vuetify";
+import { currentLocale } from "@/i18n";
 
 export default defineComponent({
   components: {
@@ -48,6 +49,18 @@ export default defineComponent({
     if (localStorage.darkMode === "true") {
       theme.global.name.value = "dark";
     }
+
+    // Keep Vuetify's own component strings (data tables, pagination, empty
+    // states, ...) aligned with the app language, so English mode is fully
+    // English exactly like the unmodified upstream UI.
+    const { current: vuetifyLocale } = useLocale();
+    watch(
+      currentLocale,
+      (value) => {
+        vuetifyLocale.value = value === "zh-CN" ? "zhHans" : "en";
+      },
+      { immediate: true },
+    );
     const eventBus = inject("eventBus") as any;
     const instance = getCurrentInstance();
 

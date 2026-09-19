@@ -79,11 +79,14 @@ export default {
     tabContainer: "容器",
     tabError: "错误",
     snoozeUpdate: "暂缓更新",
+    snoozeFor: "暂缓更新",
     unsnoozeUpdate: "取消暂缓",
     deleteContainer: "删除容器",
     closeDetails: "关闭详情",
     deleteTitle: "删除该容器？",
-    deleteConfirm: "从列表中删除 {name}？",
+    // 围绕加粗的容器名拆成两段，标记留在模板里
+    deleteConfirmPrefix: "确定要从列表中删除",
+    deleteConfirmSuffix: "吗？",
     deleteNote: "（真实容器不会被删除）",
     cancel: "取消",
     delete: "删除",
@@ -94,7 +97,6 @@ export default {
     for1Week: "1 周",
     for1Month: "1 个月",
     snooze: "暂缓",
-    copiedNotify: "容器新版本已复制到剪贴板",
     deleteError: "删除容器时出错（{msg}）",
     snoozedOk: "已成功暂缓更新",
     snoozeFail: "暂缓更新失败（{msg}）",
@@ -176,8 +178,17 @@ export default {
     none: "无可用更新",
   },
   common: {
-    copied: "已复制到剪贴板",
+    copied: "{kind} 已复制到剪贴板",
     empty: "（空）",
+  },
+  // 作为 common.copied 的 {kind} 使用；英文值保持与上游完全一致
+  copy: {
+    containerId: "容器 ID",
+    imageId: "镜像 ID",
+    imageDigest: "镜像摘要",
+    containerNewVersion: "容器新版本",
+    updateTag: "更新标签",
+    updateDigest: "更新摘要",
   },
   config: {
     triggers: "触发器",

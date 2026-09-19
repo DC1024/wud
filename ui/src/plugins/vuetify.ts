@@ -13,13 +13,16 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { zhHans } from "vuetify/locale";
 import "vuetify/styles";
+import { currentLocale } from "@/i18n";
 
 export function createVuetify() {
   return createVuetifyInstance({
     components,
     directives,
     locale: {
-      locale: "zhHans",
+      // Follow the app language: "zhHans" for zh-CN, built-in English otherwise.
+      // Kept in sync at runtime by the watcher in App.vue.
+      locale: currentLocale.value === "zh-CN" ? "zhHans" : "en",
       fallback: "en",
       messages: { zhHans },
     },
