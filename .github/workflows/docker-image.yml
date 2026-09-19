@@ -36,6 +36,12 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-,format=short
 
+      - name: Resolve WUD version
+        id: ver
+        run: |
+          VERSION=$(node -p 'require("./app/package.json").version')
+          echo "value=${VERSION}-zh" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -43,5 +49,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            WUD_VERSION=${{ steps.ver.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
