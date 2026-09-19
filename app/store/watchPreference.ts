@@ -53,10 +53,7 @@ function openDb() {
  * Get the preference for a single container.
  * @returns true | false when a preference is set, undefined otherwise
  */
-export function getWatched(
-    watcher: string,
-    name: string,
-): boolean | undefined {
+export function getWatched(watcher: string, name: string): boolean | undefined {
     const db = openDb();
     if (!db) {
         return undefined;

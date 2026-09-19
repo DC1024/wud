@@ -79,11 +79,13 @@ describe('Docker Watcher', () => {
         // Setup watch preference mock (no preference by default)
         storeWatchPreference.getWatchedMap.mockReturnValue(new Map());
         storeWatchPreference.getWatched.mockReturnValue(undefined);
-        storeWatchPreference.setWatched.mockImplementation((watcher, name, watched) => ({
-            watcher,
-            name,
-            watched,
-        }));
+        storeWatchPreference.setWatched.mockImplementation(
+            (watcher, name, watched) => ({
+                watcher,
+                name,
+                watched,
+            }),
+        );
 
         // Setup registry mock
         registry.getState.mockReturnValue({ registry: {} });

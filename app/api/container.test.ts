@@ -765,13 +765,21 @@ describe('API Container', () => {
                     name: 'local',
                     discoverContainers: jest
                         .fn()
-                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                        .mockResolvedValue([
+                            { watcher: 'local', name: 'nginx' },
+                        ]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'local', name: 'nginx', watched: true },
-                { watcher: 'local', name: 'removed-ages-ago', watched: false },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [
+                    { watcher: 'local', name: 'nginx', watched: true },
+                    {
+                        watcher: 'local',
+                        name: 'removed-ages-ago',
+                        watched: false,
+                    },
+                ],
+            );
 
             const res = await request(app).get('/watch-preference/orphans');
 
@@ -789,9 +797,9 @@ describe('API Container', () => {
                     discoverContainers: jest.fn().mockResolvedValue([]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'long-gone-vps', name: 'nginx', watched: true },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [{ watcher: 'long-gone-vps', name: 'nginx', watched: true }],
+            );
 
             const res = await request(app).get('/watch-preference/orphans');
 
@@ -813,14 +821,18 @@ describe('API Container', () => {
                     name: 'remote',
                     discoverContainers: jest
                         .fn()
-                        .mockResolvedValue([{ watcher: 'remote', name: 'kavita' }]),
+                        .mockResolvedValue([
+                            { watcher: 'remote', name: 'kavita' },
+                        ]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'local', name: 'nginx', watched: true },
-                { watcher: 'remote', name: 'kavita', watched: true },
-                { watcher: 'remote', name: 'deleted', watched: true },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [
+                    { watcher: 'local', name: 'nginx', watched: true },
+                    { watcher: 'remote', name: 'kavita', watched: true },
+                    { watcher: 'remote', name: 'deleted', watched: true },
+                ],
+            );
 
             const res = await request(app).get('/watch-preference/orphans');
 
@@ -834,9 +846,9 @@ describe('API Container', () => {
 
         test('should treat a watcher without discovery as not enumerable', async () => {
             mockWatchers({ 'nomad.local': { name: 'nomad' } });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'nomad', name: 'job-a', watched: true },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [{ watcher: 'nomad', name: 'job-a', watched: true }],
+            );
 
             const res = await request(app).get('/watch-preference/orphans');
 
@@ -851,13 +863,17 @@ describe('API Container', () => {
                     name: 'local',
                     discoverContainers: jest
                         .fn()
-                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                        .mockResolvedValue([
+                            { watcher: 'local', name: 'nginx' },
+                        ]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'local', name: 'nginx', watched: true },
-                { watcher: 'local', name: 'ghost', watched: false },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [
+                    { watcher: 'local', name: 'nginx', watched: true },
+                    { watcher: 'local', name: 'ghost', watched: false },
+                ],
+            );
             (
                 storeWatchPreference.clearWatchedMany as jest.Mock
             ).mockImplementation((entries) =>
@@ -883,15 +899,17 @@ describe('API Container', () => {
                     name: 'local',
                     discoverContainers: jest
                         .fn()
-                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                        .mockResolvedValue([
+                            { watcher: 'local', name: 'nginx' },
+                        ]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'local', name: 'nginx', watched: true },
-            ]);
-            (storeWatchPreference.clearWatchedMany as jest.Mock).mockReturnValue(
-                [],
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [{ watcher: 'local', name: 'nginx', watched: true }],
             );
+            (
+                storeWatchPreference.clearWatchedMany as jest.Mock
+            ).mockReturnValue([]);
 
             const res = await request(app).delete('/watch-preference/orphans');
 
@@ -909,9 +927,9 @@ describe('API Container', () => {
                     discoverContainers: jest.fn().mockResolvedValue([]),
                 },
             });
-            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
-                { watcher: 'local', name: 'ghost', watched: false },
-            ]);
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue(
+                [{ watcher: 'local', name: 'ghost', watched: false }],
+            );
             (
                 storeWatchPreference.clearWatchedMany as jest.Mock
             ).mockImplementation(() => {

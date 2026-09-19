@@ -105,7 +105,9 @@ describe('Watch Preference Store (SQLite)', () => {
     test('clearWatchedMany reports nothing when the store is not initialized', () => {
         closeDatabase();
         expect(
-            watchPreference.clearWatchedMany([{ watcher: 'local', name: 'nginx' }]),
+            watchPreference.clearWatchedMany([
+                { watcher: 'local', name: 'nginx' },
+            ]),
         ).toEqual([]);
     });
 
