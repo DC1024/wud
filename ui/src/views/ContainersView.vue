@@ -244,6 +244,89 @@
               </div>
             </template>
           </v-data-table>
+
+        <!-- Containers the watcher reports but that WUD does not monitor.
+             Deliberately greyed out: they belong to the picture, not to the
+             list above, which only reflects what is actually tracked. -->
+        <template v-if="showKnownUnwatchedSection">
+          <v-divider />
+
+          <div
+            class="known-unwatched-header px-4 py-3 d-flex align-center flex-wrap ga-3"
+            @click="showKnownUnwatched = !showKnownUnwatched"
+          >
+            <v-icon size="20" class="text-medium-emphasis">mdi-eye-off-outline</v-icon>
+            <div class="flex-grow-1" style="min-width: 220px">
+              <div class="text-body-2 font-weight-medium text-medium-emphasis">
+                {{ $t('containers.knownUnwatched') }}
+              </div>
+              <div class="text-caption text-disabled">
+                {{ $t('containers.knownUnwatchedHint') }}
+              </div>
+            </div>
+            <v-chip label size="small" variant="tonal" color="grey" class="font-weight-medium">
+              {{ $t('containers.knownUnwatchedCount', { n: knownUnwatchedFiltered.length }) }}
+            </v-chip>
+            <v-btn
+              variant="text"
+              size="small"
+              color="primary"
+              :prepend-icon="showKnownUnwatched ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              @click.stop="showKnownUnwatched = !showKnownUnwatched"
+            >
+              {{
+                showKnownUnwatched
+                  ? $t('containers.knownUnwatchedHide')
+                  : $t('containers.knownUnwatchedShow')
+              }}
+            </v-btn>
+            <v-btn
+              variant="text"
+              size="small"
+              color="primary"
+              prepend-icon="mdi-playlist-check"
+              to="/watchlist"
+              @click.stop
+            >
+              {{ $t('containers.openWatchlist') }}
+            </v-btn>
+          </div>
+
+          <v-expand-transition>
+            <div v-if="showKnownUnwatched" class="known-unwatched-body">
+              <div
+                v-for="container in knownUnwatchedFiltered"
+                :key="`${container.watcher}/${container.name}`"
+                class="known-unwatched-row px-4 py-2 d-flex align-center flex-wrap ga-3"
+              >
+                <v-icon size="18" class="text-disabled">mdi-docker</v-icon>
+                <span class="font-weight-medium text-medium-emphasis">{{ container.name }}</span>
+                <span class="text-caption text-disabled font-monospace">{{ container.image }}</span>
+                <v-chip v-if="container.stack" label size="x-small" variant="tonal" color="secondary">
+                  {{ container.stack }}
+                </v-chip>
+                <v-chip label size="x-small" variant="tonal" color="grey">
+                  {{ container.watcher }}
+                </v-chip>
+                <v-chip label size="x-small" variant="tonal" color="grey">
+                  {{ container.state }}
+                </v-chip>
+                <v-spacer />
+                <v-btn
+                  v-if="canWrite"
+                  size="small"
+                  variant="tonal"
+                  color="primary"
+                  prepend-icon="mdi-eye-plus-outline"
+                  :loading="enablingKey === `${container.watcher}/${container.name}`"
+                  @click.stop="enableWatch(container)"
+                >
+                  {{ $t('containers.enableWatch') }}
+                </v-btn>
+              </div>
+            </div>
+          </v-expand-transition>
+        </template>
         </v-card>
 
     <!-- Slide-over Container Detail Drawer -->
@@ -421,7 +504,9 @@ import ContainerUpdate from "@/components/ContainerUpdate.vue";
 import IconRenderer from "@/components/IconRenderer.vue";
 import {
   deleteContainer,
+  discoverContainers,
   getAllContainers,
+  setWatchPreference,
   snoozeContainer,
   unsnoozeContainer,
 } from "@/services/container";
@@ -479,6 +564,11 @@ export default defineComponent({
       containerToSnooze: null as any,
       snoozeDuration: "indefinitely",
       snoozeLoading: false,
+
+      // Containers the watcher reports but that are not monitored (yet)
+      knownUnwatched: [] as any[],
+      showKnownUnwatched: false,
+      enablingKey: "",
     };
   },
 
@@ -600,6 +690,43 @@ export default defineComponent({
         ),
       ];
     },
+    /**
+     * Containers the watcher knows about but that are not monitored, narrowed
+     * down by the filters that make sense here. The discovery feed carries no
+     * registry nor version detail, so those filters are applied separately in
+     * showKnownUnwatchedSection.
+     */
+    knownUnwatchedFiltered() {
+      const q = this.searchQuery.toLowerCase().trim();
+      return (this.knownUnwatched as any[])
+        .filter((c) => (this.watcherSelected ? this.watcherSelected === c.watcher : true))
+        .filter((c) => (this.stackSelected ? this.stackSelected === c.stack : true))
+        .filter((c) => {
+          if (!q) return true;
+          return (
+            (c.name && c.name.toLowerCase().includes(q)) ||
+            (c.image && c.image.toLowerCase().includes(q)) ||
+            (c.stack && c.stack.toLowerCase().includes(q)) ||
+            (c.watcher && c.watcher.toLowerCase().includes(q))
+          );
+        })
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    },
+
+    /**
+     * Hidden as soon as a filter relying on data the discovery feed does not
+     * carry is active, otherwise the section would contradict the table above.
+     */
+    showKnownUnwatchedSection(): boolean {
+      return (
+        this.knownUnwatchedFiltered.length > 0 &&
+        !this.registrySelected &&
+        !this.updateKindSelected &&
+        !this.updateAvailableSelected &&
+        !this.groupByLabel
+      );
+    },
+
     containersFiltered() {
       return this.containers
         .filter((c) => (this.registrySelected ? this.registrySelected === c.image?.registry?.name : true))
@@ -827,6 +954,41 @@ export default defineComponent({
         }
       }
     },
+
+    /**
+     * Start monitoring a container the watcher reported but that WUD ignores.
+     * Recording the preference is enough: the container joins the main list
+     * at the next scan.
+     */
+    async enableWatch(container: any) {
+      const key = `${container.watcher}/${container.name}`;
+      this.enablingKey = key;
+      try {
+        await setWatchPreference({
+          watcher: container.watcher,
+          name: container.name,
+          watched: true,
+        });
+        // Drop the row from this section: it is monitored from now on, and
+        // will show up in the table above after the next scan.
+        this.knownUnwatched = this.knownUnwatched.filter(
+          (c) => `${c.watcher}/${c.name}` !== key,
+        );
+        (this as any).$eventBus.emit(
+          "notify",
+          (this as any).$t("containers.enableWatchOk", { name: container.name }),
+          "success",
+        );
+      } catch (e: any) {
+        (this as any).$eventBus.emit(
+          "notify",
+          (this as any).$t("containers.enableWatchError", { msg: e.message }),
+          "error",
+        );
+      } finally {
+        this.enablingKey = "";
+      }
+    },
   },
 
   async beforeRouteEnter(to, from, next) {
@@ -840,6 +1002,28 @@ export default defineComponent({
 
     try {
       const containers = await getAllContainers();
+
+      // Discovery drives the "known but not monitored" section. It is a
+      // bonus: a watcher that fails must not prevent the container list from
+      // rendering, so the failure is swallowed on purpose.
+      let discovered: any[] = [];
+      try {
+        discovered = await discoverContainers();
+      } catch {
+        discovered = [];
+      }
+      const monitored = new Set(
+        containers.map((container: any) => `${container.watcher}/${container.name}`),
+      );
+      const knownUnwatched = discovered.filter(
+        (container) =>
+          !container.watched &&
+          // A wud.watch label is an explicit decision, and it always wins:
+          // advertising it as something to enable from here would be a lie.
+          container.watchedBy !== "label" &&
+          !monitored.has(`${container.watcher}/${container.name}`),
+      );
+
       next((vm: any) => {
         if (rs) vm.registrySelected = rs;
         if (ws) vm.watcherSelected = ws;
@@ -849,6 +1033,7 @@ export default defineComponent({
         if (of) vm.oldestFirst = String(of).toLowerCase() === "true";
         if (gl) vm.groupByLabel = gl;
         vm.containers = containers;
+        vm.knownUnwatched = knownUnwatched;
       });
     } catch (e: any) {
       next((vm: any) => {
@@ -862,6 +1047,43 @@ export default defineComponent({
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+
+.font-monospace {
+  font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* "Known but not monitored" section: greyed out, because these containers are
+   reported by the watcher but are not part of what WUD tracks. */
+.known-unwatched-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.known-unwatched-header:hover {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+.known-unwatched-body {
+  max-height: 340px;
+  overflow-y: auto;
+  border-top: 1px dashed rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.known-unwatched-row {
+  opacity: 0.75;
+  border-bottom: 1px dashed rgba(var(--v-theme-on-surface), 0.08);
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.known-unwatched-row:last-child {
+  border-bottom: none;
+}
+
+.known-unwatched-row:hover {
+  opacity: 1;
+  background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
 /* Group header styling with theme-aware accent and gradient */

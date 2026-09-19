@@ -1,5 +1,7 @@
 import { config } from '@vue/test-utils';
 import { createVuetify } from 'vuetify';
+import i18n from '@/i18n';
+import en from '@/i18n/en';
 
 // Create a Vuetify instance for testing
 const vuetify = createVuetify({
@@ -21,6 +23,29 @@ const mockFilters = {
   short: jest.fn((str, length) => str?.substring(0, length) + '...')
 };
 
+// Minimal vue-i18n stand-in: components resolve their labels through $t() from
+// their scripts, which the mount helpers never provided. Backed by the real
+// English catalog so the assertions keep checking actual labels.
+function translate(key: string, params?: Record<string, unknown>): string {
+  let node: any = en;
+  for (const part of String(key).split('.')) {
+    if (node && typeof node === 'object' && part in node) {
+      node = node[part];
+    } else {
+      return key;
+    }
+  }
+  if (typeof node !== 'string') {
+    return key;
+  }
+  if (!params) {
+    return node;
+  }
+  return node.replace(/\{(\w+)\}/g, (match, name) =>
+    params[name] !== undefined ? String(params[name]) : match,
+  );
+}
+
 // Mock router
 const mockRouter = {
   push: jest.fn(),
@@ -34,6 +59,7 @@ const mockRouter = {
 config.global.mocks = {
   $eventBus: mockEventBus,
   $filters: mockFilters,
+  $t: translate,
   $serverConfig: {
     feature: {
       delete: true
@@ -165,7 +191,11 @@ config.global.stubs = {
 };
 
 // Global plugins
-config.global.plugins = [vuetify];
+config.global.plugins = [vuetify, i18n];
+
+// The specs assert on English labels, so pin the locale: without this the app
+// default (zh-CN) would be used and every label assertion would break.
+(i18n.global.locale as any).value = 'en';
 
 // Mock display composable and Vue Router
 config.global.provide = {

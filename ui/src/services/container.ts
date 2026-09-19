@@ -23,6 +23,26 @@ export interface DiscoveredContainer {
   watchedBy: "label" | "preference" | "default";
 }
 
+/**
+ * A stored preference whose container no longer exists, typically because it
+ * has been removed or renamed.
+ */
+export interface OrphanWatchPreference {
+  watcher: string;
+  name: string;
+  watched: boolean;
+}
+
+export interface OrphanWatchPreferenceReport {
+  orphans: OrphanWatchPreference[];
+  /**
+   * Watchers that could not be enumerated (daemon unreachable, discovery
+   * unsupported). Their preferences are never reported as orphans, so the
+   * cleanup can never wipe them by mistake.
+   */
+  failedWatchers: string[];
+}
+
 function getContainerIcon() {
   return "mdi-docker";
 }
@@ -140,6 +160,56 @@ async function setWatchPreference({
   return response.json();
 }
 
+/**
+ * List the watch preferences pointing to containers that no longer exist.
+ * Detection only: nothing is deleted.
+ */
+async function listOrphanWatchPreferences(): Promise<OrphanWatchPreferenceReport> {
+  if (isDemoMode()) {
+    return mockService.listOrphanWatchPreferences();
+  }
+  const response = await fetch(url("api/containers/watch-preference/orphans"), {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || response.statusText);
+  }
+  const body = await response.json();
+  return {
+    orphans: body.orphans || [],
+    failedWatchers: body.failedWatchers || [],
+  };
+}
+
+/**
+ * Delete every orphan watch preference.
+ * @returns the number of preferences actually removed
+ */
+async function purgeOrphanWatchPreferences(): Promise<{
+  removed: { watcher: string; name: string }[];
+  count: number;
+  failedWatchers: string[];
+}> {
+  if (isDemoMode()) {
+    return mockService.purgeOrphanWatchPreferences();
+  }
+  const response = await fetch(url("api/containers/watch-preference/orphans"), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || response.statusText);
+  }
+  const body = await response.json();
+  return {
+    removed: body.removed || [],
+    count: typeof body.count === "number" ? body.count : (body.removed || []).length,
+    failedWatchers: body.failedWatchers || [],
+  };
+}
+
 async function snoozeContainer(
   containerId: string,
   { version, until }: { version?: string; until?: number } = {},
@@ -180,6 +250,8 @@ export {
   getAllContainers,
   discoverContainers,
   setWatchPreference,
+  listOrphanWatchPreferences,
+  purgeOrphanWatchPreferences,
   refreshAllContainers,
   refreshContainer,
   deleteContainer,

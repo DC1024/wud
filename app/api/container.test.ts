@@ -19,6 +19,7 @@ jest.mock('../store/watchPreference', () => ({
     getWatchedMap: jest.fn(),
     setWatched: jest.fn(),
     clearWatched: jest.fn(),
+    clearWatchedMany: jest.fn(),
     listPreferences: jest.fn(),
 }));
 
@@ -63,6 +64,14 @@ describe('API Container', () => {
         // Mirrors the real ordering: declared before '/:id'
         app.get('/discover', containerRouterLocal.discoverContainers);
         app.put('/watch-preference', containerRouterLocal.setWatchPreference);
+        app.get(
+            '/watch-preference/orphans',
+            containerRouterLocal.listOrphanWatchPreferences,
+        );
+        app.delete(
+            '/watch-preference/orphans',
+            containerRouterLocal.purgeOrphanWatchPreferences,
+        );
         app.get('/:id', containerRouterLocal.getContainer);
         app.delete('/:id', containerRouterLocal.deleteContainer);
         app.post('/:id/snooze', containerRouterLocal.snoozeContainer);
@@ -634,12 +643,22 @@ describe('API Container', () => {
 
             const discoverIndex = routes.indexOf('GET /discover');
             const preferenceIndex = routes.indexOf('PUT /watch-preference');
+            const orphansIndex = routes.indexOf(
+                'GET /watch-preference/orphans',
+            );
+            const purgeIndex = routes.indexOf(
+                'DELETE /watch-preference/orphans',
+            );
             const idIndex = routes.indexOf('GET /:id');
 
             expect(idIndex).toBeGreaterThanOrEqual(0);
             expect(discoverIndex).toBeGreaterThanOrEqual(0);
             expect(preferenceIndex).toBeGreaterThanOrEqual(0);
+            expect(orphansIndex).toBeGreaterThanOrEqual(0);
+            expect(purgeIndex).toBeGreaterThanOrEqual(0);
             expect(discoverIndex).toBeLessThan(idIndex);
+            expect(orphansIndex).toBeLessThan(idIndex);
+            expect(purgeIndex).toBeLessThan(idIndex);
         });
     });
 
@@ -727,6 +746,179 @@ describe('API Container', () => {
             const res = await request(app)
                 .put('/watch-preference')
                 .send({ watcher: 'local', name: 'kavita', watched: true });
+
+            expect(res.status).toBe(500);
+            expect(res.body.message).toBe('store error');
+        });
+    });
+
+    describe('Orphan Watch Preferences', () => {
+        function mockWatchers(watcherState: any) {
+            (registry.getState as jest.Mock).mockReturnValue({
+                watcher: watcherState,
+            });
+        }
+
+        test('should report preferences whose container is gone', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest
+                        .fn()
+                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'local', name: 'nginx', watched: true },
+                { watcher: 'local', name: 'removed-ages-ago', watched: false },
+            ]);
+
+            const res = await request(app).get('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            expect(res.body.orphans).toEqual([
+                { watcher: 'local', name: 'removed-ages-ago', watched: false },
+            ]);
+            expect(res.body.failedWatchers).toEqual([]);
+        });
+
+        test('should report a preference left behind by a removed watcher', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest.fn().mockResolvedValue([]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'long-gone-vps', name: 'nginx', watched: true },
+            ]);
+
+            const res = await request(app).get('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            expect(res.body.orphans).toHaveLength(1);
+            expect(res.body.orphans[0].watcher).toBe('long-gone-vps');
+            expect(res.body.failedWatchers).toEqual([]);
+        });
+
+        test('should never flag preferences of a watcher that could not be enumerated', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest
+                        .fn()
+                        .mockRejectedValue(new Error('daemon down')),
+                },
+                'docker.remote': {
+                    name: 'remote',
+                    discoverContainers: jest
+                        .fn()
+                        .mockResolvedValue([{ watcher: 'remote', name: 'kavita' }]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'local', name: 'nginx', watched: true },
+                { watcher: 'remote', name: 'kavita', watched: true },
+                { watcher: 'remote', name: 'deleted', watched: true },
+            ]);
+
+            const res = await request(app).get('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            // nginx is spared because its watcher is down, not because it vanished
+            expect(res.body.orphans).toEqual([
+                { watcher: 'remote', name: 'deleted', watched: true },
+            ]);
+            expect(res.body.failedWatchers).toEqual(['local']);
+        });
+
+        test('should treat a watcher without discovery as not enumerable', async () => {
+            mockWatchers({ 'nomad.local': { name: 'nomad' } });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'nomad', name: 'job-a', watched: true },
+            ]);
+
+            const res = await request(app).get('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            expect(res.body.orphans).toEqual([]);
+            expect(res.body.failedWatchers).toEqual(['nomad']);
+        });
+
+        test('should purge only the orphans', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest
+                        .fn()
+                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'local', name: 'nginx', watched: true },
+                { watcher: 'local', name: 'ghost', watched: false },
+            ]);
+            (
+                storeWatchPreference.clearWatchedMany as jest.Mock
+            ).mockImplementation((entries) =>
+                // The real store echoes back the identity only, without the value
+                entries.map(({ watcher, name }) => ({ watcher, name })),
+            );
+
+            const res = await request(app).delete('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            expect(storeWatchPreference.clearWatchedMany).toHaveBeenCalledWith([
+                { watcher: 'local', name: 'ghost', watched: false },
+            ]);
+            expect(res.body.count).toBe(1);
+            expect(res.body.removed).toEqual([
+                { watcher: 'local', name: 'ghost' },
+            ]);
+        });
+
+        test('should do nothing when there is no orphan', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest
+                        .fn()
+                        .mockResolvedValue([{ watcher: 'local', name: 'nginx' }]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'local', name: 'nginx', watched: true },
+            ]);
+            (storeWatchPreference.clearWatchedMany as jest.Mock).mockReturnValue(
+                [],
+            );
+
+            const res = await request(app).delete('/watch-preference/orphans');
+
+            expect(res.status).toBe(200);
+            expect(storeWatchPreference.clearWatchedMany).toHaveBeenCalledWith(
+                [],
+            );
+            expect(res.body.count).toBe(0);
+        });
+
+        test('should return 500 when the purge fails', async () => {
+            mockWatchers({
+                'docker.local': {
+                    name: 'local',
+                    discoverContainers: jest.fn().mockResolvedValue([]),
+                },
+            });
+            (storeWatchPreference.listPreferences as jest.Mock).mockReturnValue([
+                { watcher: 'local', name: 'ghost', watched: false },
+            ]);
+            (
+                storeWatchPreference.clearWatchedMany as jest.Mock
+            ).mockImplementation(() => {
+                throw new Error('store error');
+            });
+
+            const res = await request(app).delete('/watch-preference/orphans');
 
             expect(res.status).toBe(500);
             expect(res.body.message).toBe('store error');

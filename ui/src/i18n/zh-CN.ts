@@ -105,6 +105,16 @@ export default {
     unsnoozedOk: "已成功取消暂缓",
     unsnoozeFail: "取消暂缓失败（{msg}）",
     containersError: "获取容器列表时出错（{msg}）",
+    knownUnwatched: "已知但未监控",
+    knownUnwatchedHint:
+      "监视器已发现、但不在上方列表中的容器。启用监控后 WUD 会开始跟踪它们的更新。",
+    knownUnwatchedCount: "{n} 个容器",
+    knownUnwatchedShow: "展开",
+    knownUnwatchedHide: "收起",
+    enableWatch: "启用监控",
+    enableWatchOk: "已开始监控 {name}，下次扫描后即可看到",
+    enableWatchError: "启用监控失败（{msg}）",
+    openWatchlist: "打开监控清单",
   },
   home: {
     brand: "What's Up Docker?",
@@ -236,6 +246,21 @@ export default {
     labelInfo:
       "带有 wud.watch 标签的容器始终由标签决定，无法在此处切换。",
     readOnlyHint: "当前角色只能查看监控清单。",
+    batchSelected: "已选 {n} 项",
+    batchWatch: "批量监控",
+    batchUnwatch: "批量停止监控",
+    batchReset: "批量恢复默认",
+    batchClear: "取消选择",
+    batchSkipped: "已跳过 {n} 个由标签接管的容器",
+    batchOk: "已更新 {n} 个容器",
+    batchPartial: "已更新 {n} 个，失败：{failed}",
+    orphanTitle: "{n} 条孤立偏好",
+    orphanHint:
+      "这些手动选择指向已不存在的容器，通常是容器被删除或改名造成的。它们不会引发故障，只会让偏好表残留无效数据。",
+    orphanClean: "清理",
+    orphanCleaned: "已清理 {n} 条孤立偏好",
+    orphanCleanError: "清理孤立偏好时出错（{msg}）",
+    orphanSkippedWatchers: "以下监视器暂时不可用，其偏好已保留：{list}",
   },
   config: {
     triggers: "触发器",

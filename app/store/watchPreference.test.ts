@@ -74,6 +74,41 @@ describe('Watch Preference Store (SQLite)', () => {
         expect(watchPreference.listPreferences()).toHaveLength(1);
     });
 
+    test('clearWatchedMany removes only the entries that exist', () => {
+        watchPreference.setWatched('local', 'ghost', true);
+        watchPreference.setWatched('local', 'nginx', true);
+        watchPreference.setWatched('remote', 'kavita', false);
+
+        const removed = watchPreference.clearWatchedMany([
+            { watcher: 'local', name: 'ghost' },
+            { watcher: 'local', name: 'never-existed' },
+            { watcher: 'remote', name: 'kavita' },
+        ]);
+
+        // Only the two real rows are reported, and only they are gone
+        expect(removed).toEqual([
+            { watcher: 'local', name: 'ghost' },
+            { watcher: 'remote', name: 'kavita' },
+        ]);
+        expect(watchPreference.getWatched('local', 'ghost')).toBeUndefined();
+        expect(watchPreference.getWatched('remote', 'kavita')).toBeUndefined();
+        // The untouched one survives, even when its value is true
+        expect(watchPreference.getWatched('local', 'nginx')).toBe(true);
+    });
+
+    test('clearWatchedMany on an empty list is a no-op', () => {
+        watchPreference.setWatched('local', 'nginx', true);
+        expect(watchPreference.clearWatchedMany([])).toEqual([]);
+        expect(watchPreference.listPreferences()).toHaveLength(1);
+    });
+
+    test('clearWatchedMany reports nothing when the store is not initialized', () => {
+        closeDatabase();
+        expect(
+            watchPreference.clearWatchedMany([{ watcher: 'local', name: 'nginx' }]),
+        ).toEqual([]);
+    });
+
     test('listPreferences returns every entry', () => {
         watchPreference.setWatched('local', 'a', true);
         watchPreference.setWatched('remote', 'b', false);

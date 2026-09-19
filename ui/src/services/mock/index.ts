@@ -44,10 +44,42 @@ let currentUser: any = { ...mockUser };
 
 // Watch list state: keyed by "watcher/name", mirrors the backend
 // watched_containers table. A missing key means "no preference".
-let watchPreferenceState: Record<string, boolean> = {};
+// The seed deliberately contains two orphans (containers that are not part of
+// mockDiscoveredContainers any more) so the cleanup banner is demonstrable.
+const initialWatchPreferenceState: Record<string, boolean> = {
+  "local/legacy-grafana": true,
+  "remote-vps/retired-api": false,
+};
+
+let watchPreferenceState: Record<string, boolean> = {
+  ...initialWatchPreferenceState,
+};
 
 function watchPreferenceKey(watcher: string, name: string) {
   return `${watcher}/${name}`;
+}
+
+/**
+ * Preferences whose container is not reported by any watcher any more.
+ * Mirrors the backend: it is exactly the stored keys minus the discovered
+ * ones, because the demo watchers always answer.
+ */
+function computeOrphanPreferences() {
+  const known = new Set(
+    mockDiscoveredContainers.map((container) =>
+      watchPreferenceKey(container.watcher, container.name)
+    )
+  );
+  return Object.keys(watchPreferenceState)
+    .filter((key) => !known.has(key))
+    .map((key) => {
+      const separator = key.indexOf("/");
+      return {
+        watcher: key.substring(0, separator),
+        name: key.substring(separator + 1),
+        watched: watchPreferenceState[key],
+      };
+    });
 }
 
 /**
@@ -229,6 +261,26 @@ export const mockService = {
       watchPreferenceState[key] = watched;
     }
     return { watcher, name, watched };
+  },
+
+  async listOrphanWatchPreferences() {
+    await delay(150);
+    return { orphans: computeOrphanPreferences(), failedWatchers: [] };
+  },
+
+  async purgeOrphanWatchPreferences() {
+    await delay(200);
+    const orphans = computeOrphanPreferences();
+    orphans.forEach((orphan) => {
+      delete watchPreferenceState[
+        watchPreferenceKey(orphan.watcher, orphan.name)
+      ];
+    });
+    return {
+      removed: orphans.map(({ watcher, name }) => ({ watcher, name })),
+      count: orphans.length,
+      failedWatchers: [],
+    };
   },
 
   async refreshContainer(containerId: string) {
@@ -423,7 +475,7 @@ export const mockService = {
   // Reset demo state if needed
   resetState() {
     containersState = JSON.parse(JSON.stringify(mockContainers));
-    watchPreferenceState = {};
+    watchPreferenceState = { ...initialWatchPreferenceState };
     currentUser = { ...mockUser };
     usersState = JSON.parse(JSON.stringify(initialMockUsers));
     tokensState = JSON.parse(JSON.stringify(initialMockTokens));

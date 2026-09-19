@@ -121,15 +121,107 @@
       {{ $t('watchlist.labelInfo') }}
     </v-alert>
 
+    <!-- Orphan preferences: manual choices whose container is gone -->
+    <v-alert v-if="orphanCount > 0" type="warning" variant="tonal" rounded="lg" class="mb-4">
+      <div class="d-flex align-center flex-wrap ga-3">
+        <v-icon size="22">mdi-delete-sweep-outline</v-icon>
+        <div class="flex-grow-1">
+          <div class="font-weight-medium">
+            {{ $t('watchlist.orphanTitle', { n: orphanCount }) }}
+          </div>
+          <div class="text-caption">{{ $t('watchlist.orphanHint') }}</div>
+          <div v-if="orphanSkippedWatchers.length > 0" class="text-caption mt-1">
+            {{
+              $t('watchlist.orphanSkippedWatchers', {
+                list: orphanSkippedWatchers.join(', '),
+              })
+            }}
+          </div>
+        </div>
+        <v-btn
+          color="warning"
+          variant="flat"
+          size="small"
+          prepend-icon="mdi-delete-sweep-outline"
+          :loading="orphanLoading || orphanCleaning"
+          :disabled="!canWrite"
+          @click="cleanOrphans"
+        >
+          {{ $t('watchlist.orphanClean') }}
+        </v-btn>
+      </div>
+    </v-alert>
+
+    <!-- Batch actions -->
+    <v-card v-if="selected.length > 0" class="border mb-4" elevation="0" rounded="lg">
+      <div class="pa-3 d-flex align-center flex-wrap ga-3">
+        <v-icon size="22" color="primary">mdi-checkbox-multiple-marked-outline</v-icon>
+        <span class="font-weight-medium">
+          {{ $t('watchlist.batchSelected', { n: selected.length }) }}
+        </span>
+        <v-chip
+          v-if="skippedSelectionCount > 0"
+          label
+          size="small"
+          variant="tonal"
+          color="warning"
+          class="font-weight-medium"
+        >
+          {{ $t('watchlist.batchSkipped', { n: skippedSelectionCount }) }}
+        </v-chip>
+
+        <v-spacer />
+
+        <v-btn
+          color="success"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-eye-check-outline"
+          :disabled="!canWrite || selectableRows.length === 0"
+          :loading="batchLoading"
+          @click="applyBatch(true)"
+        >
+          {{ $t('watchlist.batchWatch') }}
+        </v-btn>
+        <v-btn
+          color="grey"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-eye-off-outline"
+          :disabled="!canWrite || selectableRows.length === 0"
+          :loading="batchLoading"
+          @click="applyBatch(false)"
+        >
+          {{ $t('watchlist.batchUnwatch') }}
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-undo-variant"
+          :disabled="!canWrite || selectableRows.length === 0"
+          :loading="batchLoading"
+          @click="applyBatch(null)"
+        >
+          {{ $t('watchlist.batchReset') }}
+        </v-btn>
+        <v-btn variant="text" size="small" @click="clearSelection">
+          {{ $t('watchlist.batchClear') }}
+        </v-btn>
+      </div>
+    </v-card>
+
     <!-- Container table -->
     <v-card class="border" elevation="0" rounded="lg">
       <v-data-table
+        v-model="selected"
         :headers="headers"
         :items="filteredContainers"
         item-value="key"
         :loading="loading"
         :items-per-page="25"
         :items-per-page-options="[10, 25, 50, -1]"
+        show-select
         hover
         class="bg-surface"
       >
@@ -252,12 +344,20 @@ import {
   discoverContainers,
   refreshAllContainers,
   setWatchPreference,
+  listOrphanWatchPreferences,
+  purgeOrphanWatchPreferences,
   type DiscoveredContainer,
 } from "@/services/container";
 import { getUser } from "@/services/auth";
 
 interface WatchlistRow extends DiscoveredContainer {
   key: string;
+}
+
+interface OrphanRow {
+  watcher: string;
+  name: string;
+  watched: boolean;
 }
 
 export default defineComponent({
@@ -272,6 +372,14 @@ export default defineComponent({
       watcherFilter: null as string | null,
       onlyUnwatched: false,
 
+      selected: [] as string[],
+      batchLoading: false,
+
+      orphans: [] as OrphanRow[],
+      orphanSkippedWatchers: [] as string[],
+      orphanLoading: false,
+      orphanCleaning: false,
+
       currentUser: null as any,
     };
   },
@@ -283,6 +391,7 @@ export default defineComponent({
       // ignore, assume read-only below
     }
     await this.load();
+    await this.loadOrphans();
   },
 
   computed: {
@@ -301,6 +410,27 @@ export default defineComponent({
 
     labelManagedCount(): number {
       return this.containers.filter((c) => c.watchedBy === "label").length;
+    },
+
+    orphanCount(): number {
+      return (this.orphans as OrphanRow[]).length;
+    },
+
+    /**
+     * Selected rows the batch actions may touch. Label-managed containers are
+     * excluded: their `wud.watch` label always wins, so writing a preference
+     * for them would be a silent no-op.
+     */
+    selectableRows(): WatchlistRow[] {
+      const selected = this.selected as string[];
+      return this.containers.filter(
+        (container) =>
+          selected.includes(container.key) && container.watchedBy !== "label",
+      );
+    },
+
+    skippedSelectionCount(): number {
+      return (this.selected as string[]).length - this.selectableRows.length;
     },
 
     watcherOptions(): string[] {
@@ -442,6 +572,12 @@ export default defineComponent({
           ...container,
           key: `${container.watcher}/${container.name}`,
         }));
+        // Drop the selected keys that are not in the list any more, otherwise
+        // a batch action could target a row the user can no longer see.
+        const keys = this.containers.map((container) => container.key);
+        this.selected = (this.selected as string[]).filter((key) =>
+          keys.includes(key),
+        );
       } catch (e: any) {
         (this as any).$eventBus?.emit(
           "notify",
@@ -525,6 +661,7 @@ export default defineComponent({
           "success",
         );
         await this.load(true);
+        await this.loadOrphans();
       } catch (e: any) {
         (this as any).$eventBus?.emit(
           "notify",
@@ -534,6 +671,106 @@ export default defineComponent({
       } finally {
         this.applying = false;
       }
+    },
+
+    /**
+     * Fetch the preferences pointing to containers that no longer exist.
+     * This is a maintenance detail: a failure must never break the page, so
+     * the banner simply stays hidden.
+     */
+    async loadOrphans() {
+      this.orphanLoading = true;
+      try {
+        const report = await listOrphanWatchPreferences();
+        this.orphans = report.orphans;
+        this.orphanSkippedWatchers = report.failedWatchers;
+      } catch {
+        this.orphans = [];
+        this.orphanSkippedWatchers = [];
+      } finally {
+        this.orphanLoading = false;
+      }
+    },
+
+    async cleanOrphans() {
+      if (!this.canWrite) {
+        return;
+      }
+      this.orphanCleaning = true;
+      try {
+        const result = await purgeOrphanWatchPreferences();
+        (this as any).$eventBus?.emit(
+          "notify",
+          (this as any).$t("watchlist.orphanCleaned", { n: result.count }),
+          "success",
+        );
+        await this.loadOrphans();
+      } catch (e: any) {
+        (this as any).$eventBus?.emit(
+          "notify",
+          (this as any).$t("watchlist.orphanCleanError", { msg: e.message }),
+          "error",
+        );
+      } finally {
+        this.orphanCleaning = false;
+      }
+    },
+
+    clearSelection() {
+      this.selected = [];
+    },
+
+    async applyBatch(watched: boolean | null) {
+      if (!this.canWrite) {
+        return;
+      }
+      const targets = this.selectableRows;
+      if (targets.length === 0) {
+        return;
+      }
+
+      this.batchLoading = true;
+      const failures: string[] = [];
+      let done = 0;
+      // Sequential on purpose: keeps the per-container error reporting exact
+      // and avoids firing a burst of parallel writes at the API.
+      for (const container of targets) {
+        try {
+          await setWatchPreference({
+            watcher: container.watcher,
+            name: container.name,
+            watched,
+          });
+          done += 1;
+        } catch (e) {
+          failures.push(container.name);
+        }
+      }
+      this.batchLoading = false;
+
+      if (done > 0) {
+        this.pendingChanges += done;
+      }
+
+      if (failures.length === 0) {
+        this.clearSelection();
+        (this as any).$eventBus?.emit(
+          "notify",
+          (this as any).$t("watchlist.batchOk", { n: done }),
+          "success",
+        );
+      } else {
+        (this as any).$eventBus?.emit(
+          "notify",
+          (this as any).$t("watchlist.batchPartial", {
+            n: done,
+            failed: failures.join(", "),
+          }),
+          "warning",
+        );
+      }
+
+      await this.load(true);
     },
   },
 });

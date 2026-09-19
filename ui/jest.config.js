@@ -6,7 +6,7 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest'
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(vuetify|@vue/test-utils|vue3-simple-icons|@iconify)/)',
+    'node_modules/(?!(vuetify|@vue/test-utils|vue3-simple-icons|@iconify|vue-i18n|@intlify)/)',
   ],
   moduleFileExtensions: ['js', 'json', 'vue', 'ts'],
   extensionsToTreatAsEsm: ['.vue'],

@@ -308,6 +308,48 @@ export function unsnoozeContainer(req, res) {
 }
 
 /**
+ * Ask every watcher for the containers it knows about.
+ *
+ * Returns the flattened list along with the names of the watchers that could
+ * not be enumerated (discovery unsupported, or the daemon threw). Callers
+ * taking destructive decisions (purging orphan preferences) MUST skip those
+ * watchers: a temporary daemon outage would otherwise look like "every
+ * container of this watcher has been removed".
+ * @returns {Promise<{containers: any[], failedWatchers: string[]}>}
+ */
+async function collectDiscoveries() {
+    const results = await Promise.all(
+        Object.entries(getWatchers()).map(async ([id, watcher]) => {
+            // Preferences are keyed on the watcher name, which the component
+            // exposes. Fall back to the registry id (docker.local -> local)
+            // for the unlikely case where it is missing.
+            const name = watcher.name || String(id).replace(/^[^.]*\./, '');
+            if (typeof watcher.discoverContainers !== 'function') {
+                return { name, containers: [], failed: true };
+            }
+            try {
+                return {
+                    name,
+                    containers: await watcher.discoverContainers(),
+                    failed: false,
+                };
+            } catch (e) {
+                log.warn(
+                    `Error when discovering containers of watcher ${name} (${e.message})`,
+                );
+                return { name, containers: [], failed: true };
+            }
+        }),
+    );
+    return {
+        containers: results.flatMap((result) => result.containers),
+        failedWatchers: results
+            .filter((result) => result.failed)
+            .map((result) => result.name),
+    };
+}
+
+/**
  * List every container reported by the watchers, including the ones that are
  * not watched. Lets users pick which containers must be monitored.
  * @param req
@@ -315,26 +357,76 @@ export function unsnoozeContainer(req, res) {
  */
 export async function discoverContainers(req, res) {
     try {
-        const discoveries = await Promise.all(
-            Object.values(getWatchers()).map(async (watcher) => {
-                if (typeof watcher.discoverContainers !== 'function') {
-                    return [];
-                }
-                try {
-                    return await watcher.discoverContainers();
-                } catch (e) {
-                    log.warn(
-                        `Error when discovering containers of watcher ${watcher.name} (${e.message})`,
-                    );
-                    return [];
-                }
-            }),
-        );
-        res.status(200).json({ containers: discoveries.flat() });
+        const { containers } = await collectDiscoveries();
+        res.status(200).json({ containers });
     } catch (e) {
         res.status(500).json({
             error: 'Discovery failed',
             message: `Error when discovering containers (${e.message})`,
+        });
+    }
+}
+
+/**
+ * Find the preferences pointing to containers no watcher knows about.
+ *
+ * A preference becomes an orphan when its container is removed or renamed, or
+ * when its watcher is no longer configured. Preferences owned by a watcher
+ * that failed to answer are deliberately kept: they are probably still valid.
+ * @returns {Promise<{orphans: any[], failedWatchers: string[]}>}
+ */
+async function findOrphanPreferences() {
+    const { containers, failedWatchers } = await collectDiscoveries();
+    const known = new Set(
+        containers.map((container) => `${container.watcher}/${container.name}`),
+    );
+    const orphans = storeWatchPreference
+        .listPreferences()
+        .filter(
+            (preference) =>
+                !failedWatchers.includes(preference.watcher) &&
+                !known.has(`${preference.watcher}/${preference.name}`),
+        );
+    return { orphans, failedWatchers };
+}
+
+/**
+ * Report the orphan watch preferences. Detection only, nothing is deleted.
+ * @param req
+ * @param res
+ */
+export async function listOrphanWatchPreferences(req, res) {
+    try {
+        res.status(200).json(await findOrphanPreferences());
+    } catch (e) {
+        res.status(500).json({
+            error: 'Orphan detection failed',
+            message: `Error when listing orphan watch preferences (${e.message})`,
+        });
+    }
+}
+
+/**
+ * Delete every orphan watch preference.
+ * @param req
+ * @param res
+ */
+export async function purgeOrphanWatchPreferences(req, res) {
+    try {
+        const { orphans, failedWatchers } = await findOrphanPreferences();
+        const removed = storeWatchPreference.clearWatchedMany(orphans);
+        log.info(
+            `Purged ${removed.length} orphan watch preference(s) (${failedWatchers.length} watcher(s) skipped)`,
+        );
+        res.status(200).json({
+            removed,
+            count: removed.length,
+            failedWatchers,
+        });
+    } catch (e) {
+        res.status(500).json({
+            error: 'Orphan cleanup failed',
+            message: e.message,
         });
     }
 }
@@ -403,6 +495,16 @@ export function init() {
         '/watch-preference',
         requireRole(['admin', 'rw'], 'write'),
         setWatchPreference,
+    );
+    router.get(
+        '/watch-preference/orphans',
+        requireRole(['admin', 'rw', 'ro'], 'read'),
+        listOrphanWatchPreferences,
+    );
+    router.delete(
+        '/watch-preference/orphans',
+        requireRole(['admin', 'rw'], 'write'),
+        purgeOrphanWatchPreferences,
     );
     router.get(
         '/:id',

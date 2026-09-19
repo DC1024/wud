@@ -12,6 +12,14 @@ export interface WatchPreference {
 }
 
 /**
+ * Identity of a preference, without its value. Enough to delete it.
+ */
+export interface WatchPreferenceKey {
+    watcher: string;
+    name: string;
+}
+
+/**
  * Per-container watch preferences set from the UI.
  *
  * Three-state semantics on purpose:
@@ -136,6 +144,39 @@ export function clearWatched(watcher: string, name: string): void {
         )
         .run();
     log.info(`Watch preference cleared for container ${watcher}_${name}`);
+}
+
+/**
+ * Remove several preferences in one call.
+ *
+ * Meant for orphan cleanup: a preference becomes an orphan as soon as the
+ * container it targets disappears or is renamed, and leaving it behind would
+ * silently bring the container back into the watch list if a new container
+ * ever reused the same name.
+ *
+ * Only the entries that actually existed are returned, so the caller can
+ * report an accurate count.
+ */
+export function clearWatchedMany(
+    entries: WatchPreferenceKey[],
+): WatchPreferenceKey[] {
+    const removed: WatchPreferenceKey[] = [];
+    entries.forEach(({ watcher, name }) => {
+        // getWatched returns undefined both when there is no row and when the
+        // store is not ready: in both cases there is nothing to delete.
+        if (getWatched(watcher, name) === undefined) {
+            return;
+        }
+        try {
+            clearWatched(watcher, name);
+            removed.push({ watcher, name });
+        } catch (e: any) {
+            log.warn(
+                `Unable to clear watch preference of ${watcher}_${name} (${e.message})`,
+            );
+        }
+    });
+    return removed;
 }
 
 /**

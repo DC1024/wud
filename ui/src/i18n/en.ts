@@ -107,6 +107,16 @@ export default {
     unsnoozedOk: "Update unsnoozed successfully",
     unsnoozeFail: "Failed to unsnooze update ({msg})",
     containersError: "Error when trying to get the containers ({msg})",
+    knownUnwatched: "Known but not monitored",
+    knownUnwatchedHint:
+      "Containers the watcher reports that are not in the list above. Monitoring one makes WUD track its updates.",
+    knownUnwatchedCount: "{n} container(s)",
+    knownUnwatchedShow: "Show",
+    knownUnwatchedHide: "Hide",
+    enableWatch: "Monitor",
+    enableWatchOk: "Now monitoring {name}, it will show up after the next scan",
+    enableWatchError: "Error when enabling the monitoring ({msg})",
+    openWatchlist: "Open the watch list",
   },
   home: {
     brand: "What's Up Docker?",
@@ -241,6 +251,22 @@ export default {
     labelInfo:
       "Containers labelled with wud.watch are always driven by their label, so they cannot be toggled here.",
     readOnlyHint: "Your role only allows reading the watch list.",
+    batchSelected: "{n} selected",
+    batchWatch: "Monitor",
+    batchUnwatch: "Stop monitoring",
+    batchReset: "Reset to default",
+    batchClear: "Clear selection",
+    batchSkipped: "{n} label-managed container(s) skipped",
+    batchOk: "{n} container(s) updated",
+    batchPartial: "{n} updated, failed: {failed}",
+    orphanTitle: "{n} orphan preference(s)",
+    orphanHint:
+      "These manual choices point to containers that no longer exist, usually because they were removed or renamed. They cause no failure, they just leave stale rows behind.",
+    orphanClean: "Clean up",
+    orphanCleaned: "{n} orphan preference(s) removed",
+    orphanCleanError: "Error when cleaning the orphan preferences ({msg})",
+    orphanSkippedWatchers:
+      "Watchers temporarily unavailable, their preferences were kept: {list}",
   },
   config: {
     triggers: "Triggers",
