@@ -52,6 +52,16 @@
         <v-tooltip activator="parent" location="right" v-if="mini">{{ $t('nav.containers') }}</v-tooltip>
       </v-list-item>
 
+      <v-list-item
+        to="/watchlist"
+        class="nav-item mb-1 rounded-lg"
+        prepend-icon="mdi-playlist-check"
+        color="primary"
+      >
+        <v-list-item-title class="font-weight-medium">{{ $t('nav.watchlist') }}</v-list-item-title>
+        <v-tooltip activator="parent" location="right" v-if="mini">{{ $t('nav.watchlist') }}</v-tooltip>
+      </v-list-item>
+
       <!-- Section Label: Monitoring -->
       <div v-if="!mini" class="section-label px-3 mt-4 mb-1 text-overline text-medium-emphasis">
         {{ $t('nav.monitoring') }}

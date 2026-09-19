@@ -1,0 +1,93 @@
+// Demo data for the watch list view.
+//
+// `labelValue` mimics the `wud.watch` label of the container: when it is set,
+// the label wins over any manual preference, exactly like the backend does.
+// The `watched` / `watchedBy` fields are computed by the mock service so the
+// three-state semantics stay visible in the demo.
+export const mockDiscoveredContainers = [
+  {
+    watcher: "local",
+    name: "traefik",
+    id: "3f1c8d2a1b4e",
+    image: "traefik:v3.1",
+    state: "running",
+    stack: "networking",
+    labelValue: "true",
+  },
+  {
+    watcher: "local",
+    name: "pihole",
+    id: "a91f4c7d2e03",
+    image: "pihole/pihole:2025.04",
+    state: "running",
+    stack: "networking",
+    labelValue: "true",
+  },
+  {
+    watcher: "local",
+    name: "homeassistant",
+    id: "77bd20e5c918",
+    image: "ghcr.io/home-assistant/home-assistant:2025.4",
+    state: "running",
+    stack: "smarthome",
+  },
+  {
+    watcher: "local",
+    name: "vaultwarden",
+    id: "5c8e11a4f7b2",
+    image: "vaultwarden/server:1.32.7",
+    state: "running",
+    stack: "security",
+    labelValue: "true",
+  },
+  {
+    watcher: "local",
+    name: "nextcloud-db",
+    id: "b2d7f0c93a15",
+    image: "mariadb:11.4",
+    state: "running",
+    stack: "cloud",
+  },
+  {
+    watcher: "local",
+    name: "redis-cache",
+    id: "e4a1b8d605cf",
+    image: "redis:7.4-alpine",
+    state: "running",
+    stack: "cloud",
+  },
+  {
+    watcher: "local",
+    name: "old-wiki",
+    id: "19f3ac72e8b4",
+    image: "requarks/wiki:2.5",
+    state: "exited",
+    stack: "docs",
+    labelValue: "false",
+  },
+  {
+    watcher: "remote-vps",
+    name: "nextcloud",
+    id: "c0b6e29d4f81",
+    image: "nextcloud:29-apache",
+    state: "running",
+    stack: "cloud",
+    labelValue: "true",
+  },
+  {
+    watcher: "remote-vps",
+    name: "crowdsec",
+    id: "8d5f3a1c0e76",
+    image: "crowdsecurity/crowdsec:v1.6.4",
+    state: "running",
+    stack: "security",
+  },
+  {
+    watcher: "remote-vps",
+    name: "staging-api",
+    id: "2b9c4e7081da",
+    image: "ghcr.io/acme/staging-api:sha-4f21c9e",
+    state: "exited",
+    stack: "staging",
+  },
+];

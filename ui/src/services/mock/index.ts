@@ -1,4 +1,5 @@
 import { mockContainers } from "./data/containers";
+import { mockDiscoveredContainers } from "./data/discovered";
 import { mockRegistries } from "./data/registries";
 import { mockWatchers } from "./data/watchers";
 import { mockTriggers } from "./data/triggers";
@@ -40,6 +41,50 @@ export function isDemoMode(): boolean {
 // In-memory demo state for interactive experience
 let containersState = JSON.parse(JSON.stringify(mockContainers));
 let currentUser: any = { ...mockUser };
+
+// Watch list state: keyed by "watcher/name", mirrors the backend
+// watched_containers table. A missing key means "no preference".
+let watchPreferenceState: Record<string, boolean> = {};
+
+function watchPreferenceKey(watcher: string, name: string) {
+  return `${watcher}/${name}`;
+}
+
+/**
+ * Reproduce the backend three-priority rule: label > preference > default.
+ */
+function resolveWatchState(container: any) {
+  const labelValue: string | undefined = container.labelValue;
+  const key = watchPreferenceKey(container.watcher, container.name);
+  const hasPreference = Object.prototype.hasOwnProperty.call(
+    watchPreferenceState,
+    key
+  );
+  const preference = hasPreference ? watchPreferenceState[key] : undefined;
+  // The demo watchers all run with watchbydefault = false.
+  const watchbydefault = false;
+
+  let watchedBy: "label" | "preference" | "default" = "default";
+  let watched = watchbydefault;
+  if (labelValue !== undefined && labelValue !== "") {
+    watchedBy = "label";
+    watched = labelValue.toLowerCase() === "true";
+  } else if (preference !== undefined) {
+    watchedBy = "preference";
+    watched = preference;
+  }
+
+  return {
+    watcher: container.watcher,
+    name: container.name,
+    id: container.id,
+    image: container.image,
+    state: container.state,
+    stack: container.stack,
+    watched,
+    watchedBy,
+  };
+}
 
 const initialMockUsers: UserItem[] = [
   {
@@ -157,6 +202,33 @@ export const mockService = {
   async refreshAllContainers() {
     await delay(600);
     return JSON.parse(JSON.stringify(containersState));
+  },
+
+  // Watch list
+  async discoverContainers() {
+    await delay(250);
+    return mockDiscoveredContainers.map((container) =>
+      JSON.parse(JSON.stringify(resolveWatchState(container)))
+    );
+  },
+
+  async setWatchPreference({
+    watcher,
+    name,
+    watched,
+  }: {
+    watcher: string;
+    name: string;
+    watched: boolean | null;
+  }) {
+    await delay(200);
+    const key = watchPreferenceKey(watcher, name);
+    if (watched === null) {
+      delete watchPreferenceState[key];
+    } else {
+      watchPreferenceState[key] = watched;
+    }
+    return { watcher, name, watched };
   },
 
   async refreshContainer(containerId: string) {
@@ -351,6 +423,7 @@ export const mockService = {
   // Reset demo state if needed
   resetState() {
     containersState = JSON.parse(JSON.stringify(mockContainers));
+    watchPreferenceState = {};
     currentUser = { ...mockUser };
     usersState = JSON.parse(JSON.stringify(initialMockUsers));
     tokensState = JSON.parse(JSON.stringify(initialMockTokens));

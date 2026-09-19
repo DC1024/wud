@@ -20,6 +20,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/ContainersView.vue"),
   },
   {
+    path: "/watchlist",
+    name: "watchlist",
+    component: () => import("../views/WatchlistView.vue"),
+  },
+  {
     path: "/configuration/authentications",
     name: "authentications",
     component: () => import("../views/ConfigurationAuthenticationsView.vue"),
