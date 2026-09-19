@@ -304,7 +304,14 @@ export default defineComponent({
     },
 
     watcherOptions(): string[] {
-      return Array.from(new Set(this.containers.map((c) => c.watcher))).sort();
+      const options: string[] = [];
+      (this.containers as WatchlistRow[]).forEach((container) => {
+        const watcher = String(container.watcher);
+        if (options.indexOf(watcher) === -1) {
+          options.push(watcher);
+        }
+      });
+      return options.sort();
     },
 
     filteredContainers(): WatchlistRow[] {
