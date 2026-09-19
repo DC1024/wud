@@ -1,5 +1,22 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center pa-4">
+  <v-container class="fill-height d-flex flex-column align-center justify-center pa-4">
+    <!-- Language switcher (available before login too) -->
+    <div class="d-flex justify-end w-100 mb-2" style="max-width: 440px">
+      <v-btn-toggle
+        v-model="lang"
+        mandatory
+        density="comfortable"
+        variant="outlined"
+        divided
+        size="small"
+        color="primary"
+        class="rounded-lg"
+      >
+        <v-btn value="zh-CN" size="small" class="text-none px-3">中文</v-btn>
+        <v-btn value="en" size="small" class="text-none px-3">English</v-btn>
+      </v-btn-toggle>
+    </div>
+
     <v-card
       class="login-card w-100 rounded-lg border bg-surface pa-6 pa-sm-8"
       max-width="440"
@@ -59,10 +76,11 @@
 </template>
 
 <script lang="ts">
-import { inject, defineComponent } from "vue";
+import { computed, inject, defineComponent } from "vue";
 import { useI18n } from "vue-i18n";
 import { getOidcRedirection, getStrategies } from "@/services/auth";
 import { isDemoMode } from "@/services/mock";
+import { currentLocale, setLocale } from "@/i18n";
 import LoginBasic from "@/components/LoginBasic.vue";
 import LoginOidc from "@/components/LoginOidc.vue";
 import logo from "@/assets/wud-logo.svg";
@@ -75,9 +93,14 @@ export default defineComponent({
   setup() {
     const eventBus = inject("eventBus") as any;
     const { t } = useI18n();
+    const lang = computed({
+      get: () => currentLocale.value,
+      set: (value: string) => setLocale(value),
+    });
     return {
       eventBus,
       t,
+      lang,
     };
   },
   data() {

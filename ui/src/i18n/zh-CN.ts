@@ -22,6 +22,10 @@ export default {
     collapseSidebar: "收起侧栏",
     errorLogout: "退出登录时出错（{msg}）",
     switchedDemo: "已切换演示用户：{user}（{role}）",
+    language: "语言",
+    languageSwitch: "切换语言",
+    langZh: "中文",
+    langEn: "English",
   },
   route: {
     home: "首页",

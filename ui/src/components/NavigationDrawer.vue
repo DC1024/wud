@@ -153,6 +153,63 @@
           <v-list-item-title class="text-body-2 font-weight-medium">{{ $t('nav.sponsor') }}</v-list-item-title>
         </v-list-item>
 
+        <!-- Language Switcher -->
+        <v-menu location="top end" offset="8">
+          <template v-slot:activator="{ props }">
+            <div
+              v-if="mini"
+              v-bind="props"
+              class="d-flex justify-center py-1 cursor-pointer lang-switch"
+            >
+              <v-icon size="20" class="text-medium-emphasis">mdi-translate</v-icon>
+              <v-tooltip activator="parent" location="right">{{ $t('nav.languageSwitch') }}</v-tooltip>
+            </div>
+            <v-list-item
+              v-else
+              v-bind="props"
+              rounded="lg"
+              class="nav-item mb-1 text-medium-emphasis lang-switch"
+            >
+              <template v-slot:prepend>
+                <v-icon icon="mdi-translate" class="mr-2" size="20" />
+              </template>
+              <v-list-item-title class="text-body-2 font-weight-medium">
+                {{ $t('nav.language') }}
+              </v-list-item-title>
+              <template v-slot:append>
+                <span class="text-caption text-medium-emphasis">{{ currentLanguageLabel }}</span>
+                <v-icon size="18" class="ml-1 text-medium-emphasis">mdi-chevron-up</v-icon>
+              </template>
+            </v-list-item>
+          </template>
+
+          <v-list density="compact" min-width="180" rounded="lg" class="pa-1">
+            <v-list-item
+              v-for="option in languageOptions"
+              :key="option.value"
+              rounded="md"
+              class="px-3"
+              @click="switchLang(option.value)"
+            >
+              <template v-slot:prepend>
+                <v-icon
+                  size="18"
+                  class="mr-2"
+                  :color="option.value === lang ? 'primary' : 'medium-emphasis'"
+                >
+                  {{ option.value === lang ? 'mdi-check-circle' : 'mdi-circle-outline' }}
+                </v-icon>
+              </template>
+              <v-list-item-title
+                class="text-body-2"
+                :class="{ 'font-weight-bold text-primary': option.value === lang }"
+              >
+                {{ option.label }}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
         <!-- User / Settings Menu -->
         <v-menu location="top end" offset="8" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
@@ -306,6 +363,7 @@ import { getLogIcon } from "@/services/log";
 import { logout } from "@/services/auth";
 import { getAppInfos } from "@/services/app";
 import { isDemoMode, mockService } from "@/services/mock";
+import { currentLocale, setLocale } from "@/i18n";
 
 export default defineComponent({
   props: {
@@ -323,6 +381,19 @@ export default defineComponent({
     const mini = ref(true);
     const darkMode = ref(localStorage.darkMode === "true");
     const version = ref("");
+
+    // 语言切换：与 i18n 模块共享同一个 locale（响应式）
+    const lang = currentLocale;
+    const languageOptions = [
+      { value: "zh-CN", label: "中文" },
+      { value: "en", label: "English" },
+    ];
+    const currentLanguageLabel = computed(() =>
+      lang.value === "zh-CN" ? "中文" : "English",
+    );
+    const switchLang = (value: string) => {
+      setLocale(value);
+    };
 
     const configurationItems = [
       {
@@ -466,6 +537,10 @@ export default defineComponent({
       version,
       isDemo,
       switchDemoUser,
+      lang,
+      languageOptions,
+      currentLanguageLabel,
+      switchLang,
     };
   },
 });
@@ -495,6 +570,10 @@ export default defineComponent({
 }
 
 .user-item {
+  cursor: pointer;
+}
+
+.lang-switch {
   cursor: pointer;
 }
 </style>

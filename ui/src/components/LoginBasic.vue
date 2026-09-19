@@ -105,11 +105,9 @@
 import { loginBasic } from "@/services/auth";
 import { isDemoMode } from "@/services/mock";
 import { defineComponent } from "vue";
-import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   data() {
-    const { t } = useI18n();
     return {
       username: "",
       password: "",
@@ -117,13 +115,21 @@ export default defineComponent({
       loading: false,
       errorMessage: "",
       isDemo: isDemoMode(),
-      rules: {
-        required: (value: any) => !!value || t("login.required"),
-      },
     };
   },
 
   computed: {
+    /**
+     * Validation rules. Rebuilt whenever the locale changes so that the
+     * "required" message follows the active UI language.
+     * @returns {object}
+     */
+    rules() {
+      return {
+        required: (value: any) => !!value || (this as any).$t("login.required"),
+      };
+    },
+
     /**
      * Is form valid?
      * @returns {boolean}
@@ -162,10 +168,10 @@ export default defineComponent({
           await loginBasic(this.username, this.password);
           this.$emit("authentication-success");
         } catch (e: any) {
-          this.errorMessage = (this as any).$i18n.t("login.invalid");
+          this.errorMessage = (this as any).$t("login.invalid");
           (this as any).$eventBus?.emit(
             "notify",
-            (this as any).$i18n.t("login.errorNotify"),
+            (this as any).$t("login.errorNotify"),
             "error",
           );
         } finally {

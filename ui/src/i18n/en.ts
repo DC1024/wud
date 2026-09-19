@@ -22,6 +22,10 @@ export default {
     collapseSidebar: "Collapse sidebar",
     errorLogout: "Error when trying to logout ({msg})",
     switchedDemo: "Switched to demo user: {user} ({role})",
+    language: "Language",
+    languageSwitch: "Switch language",
+    langZh: "中文",
+    langEn: "English",
   },
   route: {
     home: "Home",
