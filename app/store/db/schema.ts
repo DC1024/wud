@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import {
+    sqliteTable,
+    text,
+    integer,
+    index,
+    primaryKey,
+} from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // App metadata table
@@ -135,4 +141,20 @@ export const apiTokens = sqliteTable(
         index('idx_api_tokens_user').on(table.userId),
         index('idx_api_tokens_hash').on(table.tokenHash),
     ],
+);
+
+// Per-container watch preferences set from the UI (allow/deny list)
+// Keyed by (watcher, name) because a container id changes when it is recreated.
+// No rows means "no preference" => fall back to labels / watchbydefault.
+export const watchedContainers = sqliteTable(
+    'watched_containers',
+    {
+        watcher: text('watcher').notNull(),
+        name: text('name').notNull(),
+        watched: integer('watched', { mode: 'boolean' })
+            .notNull()
+            .default(true),
+        updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`),
+    },
+    (table) => [primaryKey({ columns: [table.watcher, table.name] })],
 );

@@ -29,6 +29,7 @@ import {
     wudTagDelay,
 } from './label';
 import * as storeContainer from '../../../store/container';
+import * as storeWatchPreference from '../../../store/watchPreference';
 import {
     validate as validateContainer,
     fullName,
@@ -55,6 +56,22 @@ export interface DockerWatcherConfiguration extends ComponentConfiguration {
     watchdigestdefault?: boolean;
     watchevents: boolean;
     watchatstart: boolean;
+}
+
+/**
+ * Lightweight container description returned by discoverContainers().
+ * Deliberately free of any image/registry detail so the UI can refresh the
+ * list cheaply, including containers that are NOT watched.
+ */
+export interface DiscoveredContainer {
+    watcher: string;
+    name: string;
+    id: string;
+    image: string;
+    state: string;
+    stack?: string;
+    watched: boolean;
+    watchedBy: 'label' | 'preference' | 'default';
 }
 
 // The delay before starting the watcher when the app is started
@@ -267,16 +284,43 @@ function getRepoDigest(containerImage: any) {
 
 /**
  * Return true if container must be watched.
+ *
+ * Priority order:
+ *   1. an explicit `wud.watch` label always wins (infrastructure as code)
+ *   2. otherwise the preference recorded from the UI, when one is set
+ *   3. otherwise the watcher default
+ *
  * @param wudWatchLabelValue the value of the wud.watch label
  * @param watchByDefault true if containers must be watched by default
+ * @param preference the UI preference, undefined when none is set
  */
 function isContainerToWatch(
     wudWatchLabelValue: string,
     watchByDefault: boolean,
+    preference?: boolean,
 ) {
-    return wudWatchLabelValue !== undefined && wudWatchLabelValue !== ''
-        ? wudWatchLabelValue.toLowerCase() === 'true'
-        : watchByDefault;
+    if (wudWatchLabelValue !== undefined && wudWatchLabelValue !== '') {
+        return wudWatchLabelValue.toLowerCase() === 'true';
+    }
+    if (preference !== undefined) {
+        return preference;
+    }
+    return watchByDefault;
+}
+
+/**
+ * Tell which input decided whether a container is watched.
+ * @param wudWatchLabelValue the value of the wud.watch label
+ * @param preference the UI preference, undefined when none is set
+ */
+function getWatchSource(
+    wudWatchLabelValue: string,
+    preference: boolean | undefined,
+): 'label' | 'preference' | 'default' {
+    if (wudWatchLabelValue !== undefined && wudWatchLabelValue !== '') {
+        return 'label';
+    }
+    return preference !== undefined ? 'preference' : 'default';
 }
 
 /**
@@ -597,10 +641,13 @@ export class Docker extends Watcher {
         );
 
         // Filter on containers to watch
+        // (preferences are read once per scan, then looked up in memory)
+        const watchPreferences = storeWatchPreference.getWatchedMap(this.name);
         const filteredContainers = containers.filter((container) =>
             isContainerToWatch(
                 container.Labels[wudWatch],
                 this.configuration.watchbydefault,
+                watchPreferences.get(getContainerName(container)),
             ),
         );
         const containerPromises = filteredContainers.map((container) =>
@@ -657,6 +704,42 @@ export class Docker extends Watcher {
                 containersToReturn.length,
             );
         }
+    }
+
+    /**
+     * List every container the Docker daemon reports, watched or not.
+     *
+     * Unlike getContainers(), this does NOT filter on the watch rules and does
+     * NOT fetch image details (no getImage().inspect(), no registry call), so
+     * it is cheap enough to be called from a UI on demand.
+     */
+    async discoverContainers(): Promise<DiscoveredContainer[]> {
+        const containers = await this.dockerApi.listContainers({ all: true });
+        const watchPreferences = storeWatchPreference.getWatchedMap(this.name);
+
+        return containers.map((container) => {
+            const name = getContainerName(container);
+            const containerLabels = container.Labels || {};
+            const labelValue = containerLabels[wudWatch];
+            const preference = watchPreferences.get(name);
+            return {
+                watcher: this.name,
+                name,
+                id: container.Id,
+                image: container.Image,
+                state: container.State,
+                stack:
+                    containerLabels[wudStack] ||
+                    containerLabels[dockerComposeProject] ||
+                    undefined,
+                watched: isContainerToWatch(
+                    labelValue,
+                    this.configuration.watchbydefault,
+                    preference,
+                ),
+                watchedBy: getWatchSource(labelValue, preference),
+            };
+        });
     }
 
     /**

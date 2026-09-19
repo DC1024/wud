@@ -2,6 +2,7 @@
 import express from 'express';
 import nocache from 'nocache';
 import * as storeContainer from '../store/container';
+import * as storeWatchPreference from '../store/watchPreference';
 import * as registry from '../registry';
 import { getServerConfiguration } from '../configuration';
 import { mapComponentsToList } from './component';
@@ -307,6 +308,80 @@ export function unsnoozeContainer(req, res) {
 }
 
 /**
+ * List every container reported by the watchers, including the ones that are
+ * not watched. Lets users pick which containers must be monitored.
+ * @param req
+ * @param res
+ */
+export async function discoverContainers(req, res) {
+    try {
+        const discoveries = await Promise.all(
+            Object.values(getWatchers()).map(async (watcher) => {
+                if (typeof watcher.discoverContainers !== 'function') {
+                    return [];
+                }
+                try {
+                    return await watcher.discoverContainers();
+                } catch (e) {
+                    log.warn(
+                        `Error when discovering containers of watcher ${watcher.name} (${e.message})`,
+                    );
+                    return [];
+                }
+            }),
+        );
+        res.status(200).json({ containers: discoveries.flat() });
+    } catch (e) {
+        res.status(500).json({
+            error: 'Discovery failed',
+            message: `Error when discovering containers (${e.message})`,
+        });
+    }
+}
+
+/**
+ * Set the watch preference of a container.
+ * Send "watched": null to clear it and fall back to labels / default.
+ * @param req
+ * @param res
+ */
+export function setWatchPreference(req, res) {
+    const body = req.body || {};
+    const { watcher, name, watched } = body;
+    if (!watcher || !name) {
+        return res.status(400).json({
+            error: 'Bad request',
+            message: 'watcher and name are required',
+        });
+    }
+    if (!Object.prototype.hasOwnProperty.call(body, 'watched')) {
+        return res.status(400).json({
+            error: 'Bad request',
+            message: 'watched is required (boolean, or null to clear)',
+        });
+    }
+    try {
+        if (watched === null) {
+            storeWatchPreference.clearWatched(watcher, name);
+            return res.status(200).json({ watcher, name, watched: null });
+        }
+        if (typeof watched !== 'boolean') {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'watched must be a boolean or null',
+            });
+        }
+        storeWatchPreference.setWatched(watcher, name, watched);
+        return res.status(200).json({ watcher, name, watched });
+    } catch (e) {
+        return res.status(500).json({
+            error: 'Watch preference failed',
+            message: e.message,
+        });
+    }
+}
+
+/**
  * Init Router.
  * @returns {*}
  */
@@ -317,6 +392,17 @@ export function init() {
         '/watch',
         requireRole(['admin', 'rw'], 'write'),
         watchContainers,
+    );
+    // Declared before '/:id' on purpose: otherwise the id route swallows them
+    router.get(
+        '/discover',
+        requireRole(['admin', 'rw', 'ro'], 'read'),
+        discoverContainers,
+    );
+    router.put(
+        '/watch-preference',
+        requireRole(['admin', 'rw'], 'write'),
+        setWatchPreference,
     );
     router.get(
         '/:id',

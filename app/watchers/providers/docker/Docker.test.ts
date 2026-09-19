@@ -3,6 +3,7 @@ import Docker from './Docker';
 import Registry from '../../../registries/Registry';
 import * as event from '../../../event';
 import * as storeContainer from '../../../store/container';
+import * as storeWatchPreference from '../../../store/watchPreference';
 import * as registry from '../../../registry';
 import { fullName } from '../../../model/container';
 
@@ -12,6 +13,7 @@ jest.mock('node-cron');
 jest.mock('just-debounce');
 jest.mock('../../../event');
 jest.mock('../../../store/container');
+jest.mock('../../../store/watchPreference');
 jest.mock('../../../registry');
 jest.mock('../../../model/container');
 jest.mock('../../../tag');
@@ -73,6 +75,15 @@ describe('Docker Watcher', () => {
         storeContainer.insertContainer.mockImplementation((c) => c);
         storeContainer.updateContainer.mockImplementation((c) => c);
         storeContainer.deleteContainer.mockImplementation(() => {});
+
+        // Setup watch preference mock (no preference by default)
+        storeWatchPreference.getWatchedMap.mockReturnValue(new Map());
+        storeWatchPreference.getWatched.mockReturnValue(undefined);
+        storeWatchPreference.setWatched.mockImplementation((watcher, name, watched) => ({
+            watcher,
+            name,
+            watched,
+        }));
 
         // Setup registry mock
         registry.getState.mockReturnValue({ registry: {} });
@@ -706,6 +717,111 @@ describe('Docker Watcher', () => {
             expect(result).toHaveLength(1);
         });
 
+        test('should watch an unlabeled container when the preference enables it', async () => {
+            mockDockerApi.listContainers.mockResolvedValue([
+                { Id: '1', Labels: {}, Names: ['/kavita'] },
+            ]);
+            docker.addImageDetailsToContainer = jest
+                .fn()
+                .mockResolvedValue({ id: '1' });
+            storeWatchPreference.getWatchedMap.mockReturnValue(
+                new Map([['kavita', true]]),
+            );
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: false,
+            });
+            const result = await docker.getContainers();
+
+            expect(result).toHaveLength(1);
+        });
+
+        test('should skip a container when the preference disables it', async () => {
+            mockDockerApi.listContainers.mockResolvedValue([
+                { Id: '1', Labels: {}, Names: ['/kavita'] },
+            ]);
+            docker.addImageDetailsToContainer = jest
+                .fn()
+                .mockResolvedValue({ id: '1' });
+            storeWatchPreference.getWatchedMap.mockReturnValue(
+                new Map([['kavita', false]]),
+            );
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: true,
+            });
+            const result = await docker.getContainers();
+
+            expect(result).toHaveLength(0);
+        });
+
+        test('preferences are matched by container name, not by id', async () => {
+            mockDockerApi.listContainers.mockResolvedValue([
+                { Id: 'brand-new-id', Labels: {}, Names: ['/kavita'] },
+            ]);
+            docker.addImageDetailsToContainer = jest
+                .fn()
+                .mockResolvedValue({ id: 'brand-new-id' });
+            storeWatchPreference.getWatchedMap.mockReturnValue(
+                new Map([['kavita', true]]),
+            );
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: false,
+            });
+            const result = await docker.getContainers();
+
+            expect(result).toHaveLength(1);
+        });
+
+        test.each([
+            ['true', false],
+            ['false', true],
+        ])(
+            'should let the wud.watch=%s label win over the preference',
+            async (labelValue, preference) => {
+                mockDockerApi.listContainers.mockResolvedValue([
+                    {
+                        Id: '1',
+                        Labels: { 'wud.watch': labelValue },
+                        Names: ['/kavita'],
+                    },
+                ]);
+                docker.addImageDetailsToContainer = jest
+                    .fn()
+                    .mockResolvedValue({ id: '1' });
+                storeWatchPreference.getWatchedMap.mockReturnValue(
+                    new Map([['kavita', preference]]),
+                );
+
+                await docker.register('watcher', 'docker', 'test', {
+                    watchbydefault: false,
+                });
+                const result = await docker.getContainers();
+
+                expect(result).toHaveLength(labelValue === 'true' ? 1 : 0);
+            },
+        );
+
+        test('should read watch preferences only once per scan', async () => {
+            mockDockerApi.listContainers.mockResolvedValue([
+                { Id: '1', Labels: {}, Names: ['/a'] },
+                { Id: '2', Labels: {}, Names: ['/b'] },
+                { Id: '3', Labels: {}, Names: ['/c'] },
+            ]);
+            docker.addImageDetailsToContainer = jest
+                .fn()
+                .mockResolvedValue({ id: '1' });
+
+            await docker.register('watcher', 'docker', 'test', {});
+            await docker.getContainers();
+
+            expect(storeWatchPreference.getWatchedMap).toHaveBeenCalledTimes(1);
+            expect(storeWatchPreference.getWatchedMap).toHaveBeenCalledWith(
+                'test',
+            );
+        });
+
         test('should prune old containers', async () => {
             const oldContainers = [{ id: 'old1' }, { id: 'old2' }];
             storeContainer.getContainers.mockReturnValue(oldContainers);
@@ -732,6 +848,106 @@ describe('Docker Watcher', () => {
             expect(mockLog.warn).toHaveBeenCalledWith(
                 expect.stringContaining('Store error'),
             );
+        });
+    });
+
+    describe('Container Discovery', () => {
+        const containers = [
+            {
+                Id: 'aaa',
+                Image: 'nginx:latest',
+                Names: ['/nginx'],
+                State: 'running',
+                Labels: {
+                    'wud.watch': 'true',
+                    'com.docker.compose.project': 'compose_config',
+                },
+            },
+            {
+                Id: 'bbb',
+                Image: 'kavita:latest',
+                Names: ['/kavita'],
+                State: 'exited',
+                Labels: {},
+            },
+        ];
+
+        test('should list all containers, watched or not, with all:true', async () => {
+            mockDockerApi.listContainers.mockResolvedValue(containers);
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: false,
+            });
+            const result = await docker.discoverContainers();
+
+            expect(mockDockerApi.listContainers).toHaveBeenCalledWith({
+                all: true,
+            });
+            expect(result).toHaveLength(2);
+            expect(result.map((c) => c.name)).toEqual(['nginx', 'kavita']);
+        });
+
+        test('should report the watch state and its source', async () => {
+            mockDockerApi.listContainers.mockResolvedValue(containers);
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: false,
+            });
+            const result = await docker.discoverContainers();
+
+            const nginx = result.find((c) => c.name === 'nginx');
+            expect(nginx).toMatchObject({
+                watcher: 'test',
+                id: 'aaa',
+                image: 'nginx:latest',
+                state: 'running',
+                stack: 'compose_config',
+                watched: true,
+                watchedBy: 'label',
+            });
+
+            const kavita = result.find((c) => c.name === 'kavita');
+            expect(kavita).toMatchObject({
+                id: 'bbb',
+                state: 'exited',
+                watched: false,
+                watchedBy: 'default',
+            });
+            expect(kavita.stack).toBeUndefined();
+        });
+
+        test('should report a preference as the watch source', async () => {
+            mockDockerApi.listContainers.mockResolvedValue(containers);
+            storeWatchPreference.getWatchedMap.mockReturnValue(
+                new Map([['kavita', true]]),
+            );
+
+            await docker.register('watcher', 'docker', 'test', {
+                watchbydefault: false,
+            });
+            const result = await docker.discoverContainers();
+
+            const kavita = result.find((c) => c.name === 'kavita');
+            expect(kavita.watched).toBe(true);
+            expect(kavita.watchedBy).toBe('preference');
+        });
+
+        test('should not fetch any image detail', async () => {
+            mockDockerApi.listContainers.mockResolvedValue(containers);
+
+            await docker.register('watcher', 'docker', 'test', {});
+            await docker.discoverContainers();
+
+            expect(mockDockerApi.getImage).not.toHaveBeenCalled();
+        });
+
+        test('should return an empty list when docker reports nothing', async () => {
+            mockDockerApi.listContainers.mockResolvedValue([]);
+
+            await docker.register('watcher', 'docker', 'test', {});
+            const result = await docker.discoverContainers();
+
+            expect(result).toEqual([]);
         });
     });
 

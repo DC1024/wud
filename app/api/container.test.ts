@@ -2,6 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import * as containerRouter from './container';
 import * as storeContainer from '../store/container';
+import * as storeWatchPreference from '../store/watchPreference';
 import * as registry from '../registry';
 import * as configuration from '../configuration';
 
@@ -11,6 +12,14 @@ jest.mock('../store/container', () => ({
     deleteContainer: jest.fn(),
     snoozeContainer: jest.fn(),
     unsnoozeContainer: jest.fn(),
+}));
+
+jest.mock('../store/watchPreference', () => ({
+    getWatched: jest.fn(),
+    getWatchedMap: jest.fn(),
+    setWatched: jest.fn(),
+    clearWatched: jest.fn(),
+    listPreferences: jest.fn(),
 }));
 
 jest.mock('../registry', () => ({
@@ -51,6 +60,9 @@ describe('API Container', () => {
         });
         app.get('/', containerRouterLocal.getContainers);
         app.post('/watch', containerRouterLocal.watchContainers);
+        // Mirrors the real ordering: declared before '/:id'
+        app.get('/discover', containerRouterLocal.discoverContainers);
+        app.put('/watch-preference', containerRouterLocal.setWatchPreference);
         app.get('/:id', containerRouterLocal.getContainer);
         app.delete('/:id', containerRouterLocal.deleteContainer);
         app.post('/:id/snooze', containerRouterLocal.snoozeContainer);
@@ -543,6 +555,179 @@ describe('API Container', () => {
             );
 
             const res = await request(app).delete('/container1/snooze');
+            expect(res.status).toBe(500);
+            expect(res.body.message).toBe('store error');
+        });
+    });
+
+    describe('Container Discovery', () => {
+        test('should return containers from every watcher supporting discovery', async () => {
+            (registry.getState as jest.Mock).mockReturnValue({
+                watcher: {
+                    'docker.local': {
+                        name: 'local',
+                        discoverContainers: jest
+                            .fn()
+                            .mockResolvedValue([{ name: 'nginx' }]),
+                    },
+                    'docker.remote': {
+                        name: 'remote',
+                        discoverContainers: jest
+                            .fn()
+                            .mockResolvedValue([{ name: 'kavita' }]),
+                    },
+                },
+            });
+
+            const res = await request(app).get('/discover');
+
+            expect(res.status).toBe(200);
+            expect(res.body.containers.map((c) => c.name)).toEqual([
+                'nginx',
+                'kavita',
+            ]);
+        });
+
+        test('should skip watchers that do not implement discovery', async () => {
+            (registry.getState as jest.Mock).mockReturnValue({
+                watcher: { 'nomad.local': { name: 'nomad' } },
+            });
+
+            const res = await request(app).get('/discover');
+
+            expect(res.status).toBe(200);
+            expect(res.body.containers).toEqual([]);
+        });
+
+        test('should tolerate a watcher that fails to discover', async () => {
+            (registry.getState as jest.Mock).mockReturnValue({
+                watcher: {
+                    'docker.local': {
+                        name: 'local',
+                        discoverContainers: jest
+                            .fn()
+                            .mockRejectedValue(new Error('boom')),
+                    },
+                    'docker.remote': {
+                        name: 'remote',
+                        discoverContainers: jest
+                            .fn()
+                            .mockResolvedValue([{ name: 'nginx' }]),
+                    },
+                },
+            });
+
+            const res = await request(app).get('/discover');
+
+            expect(res.status).toBe(200);
+            expect(res.body.containers).toEqual([{ name: 'nginx' }]);
+        });
+
+        test('should be reachable, i.e. declared before /:id', () => {
+            const routes = containerRouterLocal
+                .init()
+                .stack.filter((layer) => layer.route)
+                .map(
+                    (layer) =>
+                        `${Object.keys(layer.route.methods)[0].toUpperCase()} ${layer.route.path}`,
+                );
+
+            const discoverIndex = routes.indexOf('GET /discover');
+            const preferenceIndex = routes.indexOf('PUT /watch-preference');
+            const idIndex = routes.indexOf('GET /:id');
+
+            expect(idIndex).toBeGreaterThanOrEqual(0);
+            expect(discoverIndex).toBeGreaterThanOrEqual(0);
+            expect(preferenceIndex).toBeGreaterThanOrEqual(0);
+            expect(discoverIndex).toBeLessThan(idIndex);
+        });
+    });
+
+    describe('Watch Preference', () => {
+        test('should store an enabled preference', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'kavita', watched: true });
+
+            expect(res.status).toBe(200);
+            expect(storeWatchPreference.setWatched).toHaveBeenCalledWith(
+                'local',
+                'kavita',
+                true,
+            );
+            expect(storeWatchPreference.clearWatched).not.toHaveBeenCalled();
+            expect(res.body).toEqual({
+                watcher: 'local',
+                name: 'kavita',
+                watched: true,
+            });
+        });
+
+        test('should store a disabled preference', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'nginx', watched: false });
+
+            expect(res.status).toBe(200);
+            expect(storeWatchPreference.setWatched).toHaveBeenCalledWith(
+                'local',
+                'nginx',
+                false,
+            );
+        });
+
+        test('should clear the preference when watched is null', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'kavita', watched: null });
+
+            expect(res.status).toBe(200);
+            expect(storeWatchPreference.clearWatched).toHaveBeenCalledWith(
+                'local',
+                'kavita',
+            );
+            expect(storeWatchPreference.setWatched).not.toHaveBeenCalled();
+            expect(res.body.watched).toBeNull();
+        });
+
+        test('should return 400 when watcher or name is missing', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watched: true });
+
+            expect(res.status).toBe(400);
+            expect(storeWatchPreference.setWatched).not.toHaveBeenCalled();
+        });
+
+        test('should return 400 when watched is absent', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'kavita' });
+
+            expect(res.status).toBe(400);
+            expect(res.body.message).toContain('watched is required');
+        });
+
+        test('should return 400 when watched is not a boolean', async () => {
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'kavita', watched: 'yes' });
+
+            expect(res.status).toBe(400);
+            expect(res.body.message).toContain('must be a boolean or null');
+        });
+
+        test('should return 500 when the store fails', async () => {
+            (storeWatchPreference.setWatched as jest.Mock).mockImplementation(
+                () => {
+                    throw new Error('store error');
+                },
+            );
+
+            const res = await request(app)
+                .put('/watch-preference')
+                .send({ watcher: 'local', name: 'kavita', watched: true });
+
             expect(res.status).toBe(500);
             expect(res.body.message).toBe('store error');
         });
