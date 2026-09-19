@@ -5,7 +5,7 @@
         <v-icon color="secondary">mdi-identifier</v-icon>
       </template>
       <v-list-item-title>
-        Id
+        {{ $t('detail.id') }}
         <v-tooltip bottom>
           <template v-slot:activator="{ props }">
             <v-btn
@@ -18,7 +18,7 @@
               <v-icon size="small">mdi-clipboard</v-icon>
             </v-btn>
           </template>
-          <span class="text-caption">Copy to clipboard</span>
+          <span class="text-caption">{{ $t('containers.copyToClipboard') }}</span>
         </v-tooltip>
       </v-list-item-title>
       <v-list-item-subtitle>{{ image.id }}</v-list-item-subtitle>
@@ -27,14 +27,14 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-pencil</v-icon>
       </template>
-      <v-list-item-title>Name</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.name') }}</v-list-item-title>
       <v-list-item-subtitle>{{ image.name }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
         <v-icon color="secondary">{{ registryIcon }}</v-icon>
       </template>
-      <v-list-item-title>Registry</v-list-item-title>
+      <v-list-item-title>{{ $t('containers.registry') }}</v-list-item-title>
       <v-list-item-subtitle>{{ image.registry.name }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
@@ -42,8 +42,8 @@
         <v-icon color="secondary">mdi-tag</v-icon>
       </template>
       <v-list-item-title>
-        Tag &nbsp;<v-chip v-if="image.tag.semver" size="x-small" variant="outlined" color="success" label
-          >semver</v-chip
+        {{ $t('update.tag') }} &nbsp;<v-chip v-if="image.tag.semver" size="x-small" variant="outlined" color="success" label
+          >{{ $t('update.semver') }}</v-chip
         >
       </v-list-item-title>
       <v-list-item-subtitle>
@@ -55,7 +55,7 @@
         <v-icon color="secondary">mdi-function-variant</v-icon>
       </template>
       <v-list-item-title>
-        Digest
+        {{ $t('update.digest') }}
         <v-tooltip bottom>
           <template v-slot:activator="{ props }">
             <v-btn
@@ -68,7 +68,7 @@
               <v-icon size="small">mdi-clipboard</v-icon>
             </v-btn>
           </template>
-          <span class="text-caption">Copy to clipboard</span>
+          <span class="text-caption">{{ $t('containers.copyToClipboard') }}</span>
         </v-tooltip>
       </v-list-item-title>
       <v-list-item-subtitle>
@@ -79,7 +79,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">{{ osIcon }}</v-icon>
       </template>
-      <v-list-item-title>OS / Architecture</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.osArch') }}</v-list-item-title>
       <v-list-item-subtitle
         >{{ image.os }} / {{ image.architecture }}</v-list-item-subtitle
       >
@@ -88,7 +88,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-calendar</v-icon>
       </template>
-      <v-list-item-title>Created</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.created') }}</v-list-item-title>
       <v-list-item-subtitle>{{
         $filters.date(image.created)
       }}</v-list-item-subtitle>
@@ -132,7 +132,7 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", `${kind} copied to clipboard`);
+      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
     },
   },
 });

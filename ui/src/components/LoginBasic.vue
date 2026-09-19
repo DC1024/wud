@@ -3,7 +3,7 @@
     <div class="py-2">
       <v-text-field
         v-model="username"
-        label="Username"
+        :label="$t('login.username')"
         prepend-inner-icon="mdi-account-outline"
         :rules="[rules.required]"
         autocomplete="username"
@@ -18,7 +18,7 @@
 
       <v-text-field
         v-model="password"
-        label="Password"
+        :label="$t('login.password')"
         :type="showPassword ? 'text' : 'password'"
         prepend-inner-icon="mdi-lock-outline"
         :rules="[rules.required]"
@@ -52,14 +52,14 @@
         prepend-icon="mdi-login"
         type="submit"
       >
-        Login
+        {{ $t('login.signIn') }}
       </v-btn>
 
       <!-- Demo Mode Quick Login Helpers -->
       <div v-if="isDemo" class="mt-4 pt-3 border-t">
         <div class="d-flex align-center text-caption font-weight-bold text-medium-emphasis mb-2">
           <v-icon size="small" class="mr-1 text-primary">mdi-lightning-bolt</v-icon>
-          Demo Quick Sign-In:
+          {{ $t('login.demoQuick') }}
         </div>
         <div class="d-flex flex-column gap-2">
           <v-btn
@@ -70,7 +70,7 @@
             prepend-icon="mdi-shield-crown-outline"
             @click="quickLogin('homelab-admin')"
           >
-            Admin <span class="text-medium-emphasis ml-1 font-weight-regular">(homelab-admin)</span>
+            {{ $t('login.demoAdmin') }} <span class="text-medium-emphasis ml-1 font-weight-regular">(homelab-admin)</span>
           </v-btn>
           <v-btn
             size="small"
@@ -80,7 +80,7 @@
             prepend-icon="mdi-pencil-outline"
             @click="quickLogin('developer')"
           >
-            Read / Write <span class="text-medium-emphasis ml-1 font-weight-regular">(developer)</span>
+            {{ $t('login.demoRw') }} <span class="text-medium-emphasis ml-1 font-weight-regular">(developer)</span>
           </v-btn>
           <v-btn
             size="small"
@@ -90,11 +90,11 @@
             prepend-icon="mdi-eye-outline"
             @click="quickLogin('viewer-oidc')"
           >
-            Read-Only <span class="text-medium-emphasis ml-1 font-weight-regular">(viewer-oidc)</span>
+            {{ $t('login.demoRo') }} <span class="text-medium-emphasis ml-1 font-weight-regular">(viewer-oidc)</span>
           </v-btn>
         </div>
         <div class="text-caption text-grey mt-2 text-center">
-          Any password accepted in demo mode.
+          {{ $t('login.demoAnyPw') }}
         </div>
       </div>
     </div>
@@ -105,9 +105,11 @@
 import { loginBasic } from "@/services/auth";
 import { isDemoMode } from "@/services/mock";
 import { defineComponent } from "vue";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   data() {
+    const { t } = useI18n();
     return {
       username: "",
       password: "",
@@ -116,7 +118,7 @@ export default defineComponent({
       errorMessage: "",
       isDemo: isDemoMode(),
       rules: {
-        required: (value: any) => !!value || "Required",
+        required: (value: any) => !!value || t("login.required"),
       },
     };
   },
@@ -160,10 +162,10 @@ export default defineComponent({
           await loginBasic(this.username, this.password);
           this.$emit("authentication-success");
         } catch (e: any) {
-          this.errorMessage = "Invalid username or password";
+          this.errorMessage = (this as any).$i18n.t("login.invalid");
           (this as any).$eventBus?.emit(
             "notify",
-            "Username or password error",
+            (this as any).$i18n.t("login.errorNotify"),
             "error",
           );
         } finally {

@@ -5,7 +5,7 @@
       <v-toolbar color="surface" density="compact" class="px-3 py-1">
         <v-icon :icon="triggerIcon" class="mr-2 text-primary" size="24"></v-icon>
         <div class="d-flex align-center">
-          <span class="text-subtitle-1 font-weight-bold mr-2">Triggers</span>
+          <span class="text-subtitle-1 font-weight-bold mr-2">{{ $t('config.triggers') }}</span>
           <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
             {{ triggersFiltered.length }}
           </v-chip>
@@ -17,7 +17,7 @@
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
-          placeholder="Search triggers..."
+          :placeholder="$t('config.searchTriggers')"
           density="compact"
           variant="outlined"
           hide-details
@@ -33,7 +33,7 @@
           size="small"
           @click="refreshTriggers"
           :loading="isLoading"
-          title="Refresh"
+          :title="$t('config.refresh')"
         ></v-btn>
       </v-toolbar>
 
@@ -77,9 +77,9 @@
         <template v-slot:no-data>
           <div class="pa-8 text-center text-grey">
             <v-icon size="64" class="mb-4 opacity-50">{{ triggerIcon }}</v-icon>
-            <div class="text-h6">No triggers found</div>
-            <div class="text-body-2" v-if="search">Try clearing your search</div>
-            <div class="text-body-2" v-else>No triggers configured</div>
+            <div class="text-h6">{{ $t('config.noTriggers') }}</div>
+            <div class="text-body-2" v-if="search">{{ $t('config.tryClearSearch') }}</div>
+            <div class="text-body-2" v-else>{{ $t('config.noTriggersConfigured') }}</div>
           </div>
         </template>
       </v-data-table>
@@ -104,7 +104,7 @@
                 {{ selectedTrigger.name }}
               </div>
               <div class="text-caption text-grey text-truncate">
-                {{ selectedTrigger.type }} trigger details
+                {{ $t('config.triggerDetails', { type: selectedTrigger.type }) }}
               </div>
             </div>
           </div>
@@ -117,9 +117,9 @@
             prepend-icon="mdi-test-tube"
             @click="testDialogOpen = true"
           >
-            Test
+            {{ $t('config.test') }}
           </v-btn>
-          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" title="Close details"></v-btn>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" :title="$t('config.closeDetails')"></v-btn>
         </v-toolbar>
 
         <!-- Drawer Body -->
@@ -137,7 +137,7 @@
                 prepend-icon="mdi-test-tube"
                 @click="testDialogOpen = true"
               >
-                Test this trigger
+                {{ $t('config.testThisTrigger') }}
               </v-btn>
             </template>
           </configuration-drawer-content>
@@ -223,19 +223,19 @@ export default defineComponent({
     headers() {
       return [
         {
-          title: "Type",
+          title: this.$t("config.type"),
           key: "type",
           value: (item: any) => item.type || "",
           sortable: true,
         },
         {
-          title: "Name",
+          title: this.$t("config.name"),
           key: "name",
           value: (item: any) => item.name || "",
           sortable: true,
         },
         {
-          title: "Configuration",
+          title: this.$t("config.configuration"),
           key: "configuration",
           value: (item: any) => Object.keys(item.configuration || {}).length,
           sortable: true,
@@ -259,7 +259,7 @@ export default defineComponent({
   methods: {
     getConfigurationCount(item: any): string {
       const count = Object.keys(item.configuration || {}).length;
-      return `${count} ${count === 1 ? "param" : "params"}`;
+      return this.$t("config.params", { n: count });
     },
     onRowClick(event: any, row: any) {
       const item = row?.item?.raw || row?.item || row;
@@ -282,7 +282,7 @@ export default defineComponent({
       } catch (e: any) {
         (this as any).$eventBus?.emit(
           "notify",
-          `Error when trying to load the triggers (${e.message})`,
+          this.$t("config.loadTriggersError", { msg: e.message }),
           "error"
         );
       } finally {
@@ -299,7 +299,7 @@ export default defineComponent({
       next((vm: any) => {
         vm.$eventBus?.emit(
           "notify",
-          `Error when trying to load the triggers (${e.message})`,
+          vm.$t("config.loadTriggersError", { msg: e.message }),
           "error"
         );
       });

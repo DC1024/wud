@@ -10,7 +10,7 @@
         </router-link>
       </v-list-item-title>
       <v-list-item-subtitle>
-        (threshold {{ trigger.configuration.threshold }})
+        {{ $t('triggers.threshold', { threshold: trigger.configuration.threshold }) }}
       </v-list-item-subtitle>
       <template v-slot:append>
         <v-btn
@@ -21,7 +21,7 @@
           @click="runTrigger"
           :loading="isTriggering"
         >
-          Run
+          {{ $t('triggers.run') }}
           <v-icon end>mdi-gesture-tap</v-icon>
         </v-btn>
       </template>
@@ -78,11 +78,11 @@ export default defineComponent({
           triggerType: this.trigger.type,
           triggerName: this.trigger.name,
         });
-        (this as any).$eventBus.emit("notify", "Trigger executed with success");
+        (this as any).$eventBus.emit("notify", this.$t("triggers.success"));
       } catch (err: any) {
         (this as any).$eventBus.emit(
           "notify",
-          `Trigger executed with error (${err.message}})`,
+          this.$t("triggers.error", { msg: err.message }),
           "error",
         );
       } finally {

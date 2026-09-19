@@ -4,7 +4,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-tag</v-icon>
       </template>
-      <v-list-item-title>Error</v-list-item-title>
+      <v-list-item-title>{{ $t('containers.tabError') }}</v-list-item-title>
       <v-list-item-subtitle>
         {{ error.message }}
       </v-list-item-subtitle>

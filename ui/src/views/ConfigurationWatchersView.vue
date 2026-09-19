@@ -5,7 +5,7 @@
       <v-toolbar color="surface" density="compact" class="px-3 py-1">
         <v-icon :icon="watcherIcon" class="mr-2 text-primary" size="24"></v-icon>
         <div class="d-flex align-center">
-          <span class="text-subtitle-1 font-weight-bold mr-2">Watchers</span>
+          <span class="text-subtitle-1 font-weight-bold mr-2">{{ $t('config.watchers') }}</span>
           <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
             {{ watchersFiltered.length }}
           </v-chip>
@@ -17,7 +17,7 @@
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
-          placeholder="Search watchers..."
+          :placeholder="$t('config.searchWatchers')"
           density="compact"
           variant="outlined"
           hide-details
@@ -33,7 +33,7 @@
           size="small"
           @click="refreshWatchers"
           :loading="isLoading"
-          title="Refresh"
+          :title="$t('config.refresh')"
         ></v-btn>
       </v-toolbar>
 
@@ -77,9 +77,9 @@
         <template v-slot:no-data>
           <div class="pa-8 text-center text-grey">
             <v-icon size="64" class="mb-4 opacity-50">{{ watcherIcon }}</v-icon>
-            <div class="text-h6">No watchers found</div>
-            <div class="text-body-2" v-if="search">Try clearing your search</div>
-            <div class="text-body-2" v-else>No watchers configured</div>
+            <div class="text-h6">{{ $t('config.noWatchers') }}</div>
+            <div class="text-body-2" v-if="search">{{ $t('config.tryClearSearch') }}</div>
+            <div class="text-body-2" v-else>{{ $t('config.noWatchersConfigured') }}</div>
           </div>
         </template>
       </v-data-table>
@@ -104,11 +104,11 @@
                 {{ selectedWatcher.name }}
               </div>
               <div class="text-caption text-grey text-truncate">
-                {{ selectedWatcher.type }} watcher details
+                {{ $t('config.watcherDetails', { type: selectedWatcher.type }) }}
               </div>
             </div>
           </div>
-          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" title="Close details"></v-btn>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" :title="$t('config.closeDetails')"></v-btn>
         </v-toolbar>
 
         <!-- Drawer Body -->
@@ -175,19 +175,19 @@ export default defineComponent({
     headers() {
       return [
         {
-          title: "Type",
+          title: this.$t("config.type"),
           key: "type",
           value: (item: any) => item.type || "",
           sortable: true,
         },
         {
-          title: "Name",
+          title: this.$t("config.name"),
           key: "name",
           value: (item: any) => item.name || "",
           sortable: true,
         },
         {
-          title: "Configuration",
+          title: this.$t("config.configuration"),
           key: "configuration",
           value: (item: any) => Object.keys(item.configuration || {}).length,
           sortable: true,
@@ -211,7 +211,7 @@ export default defineComponent({
   methods: {
     getConfigurationCount(item: any): string {
       const count = Object.keys(item.configuration || {}).length;
-      return `${count} ${count === 1 ? "param" : "params"}`;
+      return this.$t("config.params", { n: count });
     },
     onRowClick(event: any, row: any) {
       const item = row?.item?.raw || row?.item || row;
@@ -234,7 +234,7 @@ export default defineComponent({
       } catch (e: any) {
         (this as any).$eventBus?.emit(
           "notify",
-          `Error when trying to load the watchers (${e.message})`,
+          this.$t("config.loadWatchersError", { msg: e.message }),
           "error"
         );
       } finally {
@@ -251,7 +251,7 @@ export default defineComponent({
       next((vm: any) => {
         vm.$eventBus?.emit(
           "notify",
-          `Error when trying to load the watchers (${e.message})`,
+          vm.$t("config.loadWatchersError", { msg: e.message }),
           "error"
         );
       });

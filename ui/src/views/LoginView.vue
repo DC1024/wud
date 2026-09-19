@@ -11,10 +11,10 @@
           <v-img :src="logo" max-width="40" max-height="40" alt="WUD logo" />
         </v-avatar>
         <h1 class="text-h5 font-weight-bold text-high-emphasis mb-1">
-          What's Up Docker?
+          {{ $t('login.title') }}
         </h1>
         <p class="text-body-2 text-medium-emphasis mb-0">
-          Sign in to access your container dashboard
+          {{ $t('login.subtitle') }}
         </p>
       </div>
 
@@ -60,6 +60,7 @@
 
 <script lang="ts">
 import { inject, defineComponent } from "vue";
+import { useI18n } from "vue-i18n";
 import { getOidcRedirection, getStrategies } from "@/services/auth";
 import { isDemoMode } from "@/services/mock";
 import LoginBasic from "@/components/LoginBasic.vue";
@@ -73,8 +74,10 @@ export default defineComponent({
   },
   setup() {
     const eventBus = inject("eventBus") as any;
+    const { t } = useI18n();
     return {
       eventBus,
+      t,
     };
   },
   data() {
@@ -108,7 +111,7 @@ export default defineComponent({
      */
     formatStrategyName(strategy: any) {
       if (strategy.type === "basic") {
-        return strategy.name === "Login" ? "Credentials" : strategy.name;
+        return strategy.name === "Login" ? this.t("login.credentials") : strategy.name;
       }
       return strategy.name
         ? strategy.name.charAt(0).toUpperCase() + strategy.name.slice(1)
@@ -204,7 +207,7 @@ export default defineComponent({
         if (vm.eventBus) {
           vm.eventBus.emit(
             "notify",
-            `Error when trying to get the authentication strategies (${e.message})`,
+            vm.t("login.errorStrategies", { msg: e.message }),
             "error",
           );
         }

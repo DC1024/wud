@@ -25,7 +25,7 @@
         size="small"
         color="medium-emphasis"
         @click.stop="mini = !mini"
-        :title="mini ? 'Expand sidebar' : 'Collapse sidebar'"
+        :title="mini ? $t('nav.expandSidebar') : $t('nav.collapseSidebar')"
       ></v-btn>
     </div>
 
@@ -38,8 +38,8 @@
         prepend-icon="mdi-home-variant-outline"
         color="primary"
       >
-        <v-list-item-title class="font-weight-medium">Home</v-list-item-title>
-        <v-tooltip activator="parent" location="right" v-if="mini">Home</v-tooltip>
+        <v-list-item-title class="font-weight-medium">{{ $t('nav.home') }}</v-list-item-title>
+        <v-tooltip activator="parent" location="right" v-if="mini">{{ $t('nav.home') }}</v-tooltip>
       </v-list-item>
 
       <v-list-item
@@ -48,13 +48,13 @@
         :prepend-icon="containerIcon"
         color="primary"
       >
-        <v-list-item-title class="font-weight-medium">Containers</v-list-item-title>
-        <v-tooltip activator="parent" location="right" v-if="mini">Containers</v-tooltip>
+        <v-list-item-title class="font-weight-medium">{{ $t('nav.containers') }}</v-list-item-title>
+        <v-tooltip activator="parent" location="right" v-if="mini">{{ $t('nav.containers') }}</v-tooltip>
       </v-list-item>
 
       <!-- Section Label: Monitoring -->
       <div v-if="!mini" class="section-label px-3 mt-4 mb-1 text-overline text-medium-emphasis">
-        Monitoring
+        {{ $t('nav.monitoring') }}
       </div>
       <v-divider v-else class="my-3 mx-2 opacity-50" />
 
@@ -64,13 +64,13 @@
         :prepend-icon="logIcon"
         color="primary"
       >
-        <v-list-item-title class="font-weight-medium">Logs</v-list-item-title>
-        <v-tooltip activator="parent" location="right" v-if="mini">Logs</v-tooltip>
+        <v-list-item-title class="font-weight-medium">{{ $t('nav.logs') }}</v-list-item-title>
+        <v-tooltip activator="parent" location="right" v-if="mini">{{ $t('nav.logs') }}</v-tooltip>
       </v-list-item>
 
       <!-- Section Label: Configuration -->
       <div v-if="!mini" class="section-label px-3 mt-4 mb-1 text-overline text-medium-emphasis">
-        Configuration
+        {{ $t('nav.configuration') }}
       </div>
       <v-divider v-else class="my-3 mx-2 opacity-50" />
 
@@ -84,10 +84,10 @@
         color="primary"
       >
         <v-list-item-title class="font-weight-medium text-capitalize">
-          {{ item.name }}
+          {{ $t('route.' + item.name) }}
         </v-list-item-title>
         <v-tooltip activator="parent" location="right" v-if="mini">
-          {{ item.name }}
+          {{ $t('route.' + item.name) }}
         </v-tooltip>
       </v-list-item>
     </v-list>
@@ -110,7 +110,7 @@
             class="rounded-lg"
           >
             <v-icon size="20">mdi-book-open-page-variant-outline</v-icon>
-            <v-tooltip activator="parent" location="right">Documentation</v-tooltip>
+            <v-tooltip activator="parent" location="right">{{ $t('nav.documentation') }}</v-tooltip>
           </v-btn>
         </div>
         <v-list-item
@@ -122,7 +122,7 @@
           prepend-icon="mdi-book-open-page-variant-outline"
           append-icon="mdi-open-in-new"
         >
-          <v-list-item-title class="text-body-2 font-weight-medium">Documentation</v-list-item-title>
+          <v-list-item-title class="text-body-2 font-weight-medium">{{ $t('nav.documentation') }}</v-list-item-title>
         </v-list-item>
 
         <!-- Sponsor Link -->
@@ -138,7 +138,7 @@
             class="rounded-lg"
           >
             <v-icon size="20" color="pink">mdi-heart</v-icon>
-            <v-tooltip activator="parent" location="right">Sponsor WUD</v-tooltip>
+            <v-tooltip activator="parent" location="right">{{ $t('nav.sponsor') }}</v-tooltip>
           </v-btn>
         </div>
         <v-list-item
@@ -150,7 +150,7 @@
           prepend-icon="mdi-heart"
           append-icon="mdi-open-in-new"
         >
-          <v-list-item-title class="text-body-2 font-weight-medium">Sponsor WUD</v-list-item-title>
+          <v-list-item-title class="text-body-2 font-weight-medium">{{ $t('nav.sponsor') }}</v-list-item-title>
         </v-list-item>
 
         <!-- User / Settings Menu -->
@@ -210,7 +210,7 @@
               <template v-slot:prepend>
                 <v-icon icon="mdi-account-circle-outline" class="mr-2" size="20" />
               </template>
-              <v-list-item-title class="text-body-2">My Profile</v-list-item-title>
+              <v-list-item-title class="text-body-2">{{ $t('nav.myProfile') }}</v-list-item-title>
             </v-list-item>
 
             <v-divider class="my-2 opacity-50" />
@@ -220,7 +220,7 @@
               <template v-slot:prepend>
                 <v-icon :icon="darkMode ? 'mdi-weather-night' : 'mdi-weather-sunny'" class="mr-2" size="20" />
               </template>
-              <v-list-item-title class="text-body-2">Dark mode</v-list-item-title>
+              <v-list-item-title class="text-body-2">{{ $t('nav.darkMode') }}</v-list-item-title>
               <template v-slot:append>
                 <v-switch
                   :model-value="darkMode"
@@ -239,14 +239,14 @@
               <v-divider class="my-2 opacity-50" />
               <div class="px-3 py-1 text-caption font-weight-bold text-medium-emphasis d-flex align-center">
                 <v-icon size="small" class="mr-1 text-primary">mdi-swap-horizontal-bold</v-icon>
-                Switch Demo Role:
+                {{ $t('nav.switchDemoRole') }}
               </div>
               <v-list-item rounded="md" class="px-3" @click="switchDemoUser('homelab-admin')">
                 <template v-slot:prepend>
                   <v-icon icon="mdi-shield-crown-outline" color="error" class="mr-2" size="18" />
                 </template>
                 <v-list-item-title class="text-caption">
-                  Admin <span class="text-disabled font-weight-light">(homelab-admin)</span>
+                  {{ $t('nav.demoAdmin') }} <span class="text-disabled font-weight-light">(homelab-admin)</span>
                 </v-list-item-title>
               </v-list-item>
               <v-list-item rounded="md" class="px-3" @click="switchDemoUser('developer')">
@@ -254,7 +254,7 @@
                   <v-icon icon="mdi-pencil-outline" color="primary" class="mr-2" size="18" />
                 </template>
                 <v-list-item-title class="text-caption">
-                  Read/Write <span class="text-disabled font-weight-light">(developer)</span>
+                  {{ $t('nav.demoRw') }} <span class="text-disabled font-weight-light">(developer)</span>
                 </v-list-item-title>
               </v-list-item>
               <v-list-item rounded="md" class="px-3" @click="switchDemoUser('viewer-oidc')">
@@ -262,7 +262,7 @@
                   <v-icon icon="mdi-eye-outline" color="grey" class="mr-2" size="18" />
                 </template>
                 <v-list-item-title class="text-caption">
-                  Read-Only <span class="text-disabled font-weight-light">(viewer-oidc)</span>
+                  {{ $t('nav.demoRo') }} <span class="text-disabled font-weight-light">(viewer-oidc)</span>
                 </v-list-item-title>
               </v-list-item>
             </template>
@@ -274,7 +274,7 @@
                 <template v-slot:prepend>
                   <v-icon icon="mdi-logout" color="error" class="mr-2" size="20" />
                 </template>
-                <v-list-item-title class="text-body-2 font-weight-medium">Log out</v-list-item-title>
+                <v-list-item-title class="text-body-2 font-weight-medium">{{ $t('nav.logout') }}</v-list-item-title>
               </v-list-item>
             </template>
           </v-card>
@@ -291,6 +291,7 @@
 
 <script lang="ts">
 import { ref, computed, onMounted, inject, defineComponent } from "vue";
+import { useI18n } from "vue-i18n";
 import { useTheme } from "vuetify";
 import { useRouter } from "vue-router";
 import { getContainerIcon } from "@/services/container";
@@ -314,6 +315,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const { t } = useI18n();
     const theme = useTheme();
     const router = useRouter();
     const eventBus = inject("eventBus") as any;
@@ -387,7 +389,7 @@ export default defineComponent({
       } catch (e: any) {
         eventBus?.emit(
           "notify",
-          `Error when trying to logout (${e.message})`,
+          t("nav.errorLogout", { msg: e.message }),
           "error",
         );
       }
@@ -398,7 +400,7 @@ export default defineComponent({
     const switchDemoUser = async (targetUsername: string) => {
       const newUser = await mockService.loginBasic(targetUsername);
       eventBus?.emit("authenticated", newUser);
-      eventBus?.emit("notify", `Switched to demo user: ${newUser.username} (${newUser.role})`, "info");
+      eventBus?.emit("notify", t("nav.switchedDemo", { user: newUser.username, role: newUser.role }), "info");
       if (newUser.role !== "admin" && router.currentRoute.value.path.startsWith("/configuration/users")) {
         router.push("/");
       }
@@ -408,7 +410,7 @@ export default defineComponent({
       if (props.user && props.user.username) {
         return props.user.username;
       }
-      return "Settings";
+      return t("nav.settings");
     });
 
     const userRole = computed(() => {
@@ -426,9 +428,9 @@ export default defineComponent({
 
     const userSubtitle = computed(() => {
       if (props.user && props.user.username && props.user.username !== "anonymous") {
-        return "Connected";
+        return t("nav.connected");
       }
-      return "Preferences";
+      return t("nav.preferences");
     });
 
     const userInitial = computed(() => {
@@ -496,4 +498,3 @@ export default defineComponent({
   cursor: pointer;
 }
 </style>
-

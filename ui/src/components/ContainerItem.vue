@@ -9,7 +9,7 @@
     >
       <div class="text-h6">
         {{ this.groupingLabel }} =
-        {{ this.container.labels?.[this.groupingLabel] ?? "(empty)" }}
+        {{ this.container.labels?.[this.groupingLabel] ?? $t('common.empty') }}
       </div>
       <v-divider class="pb-3"></v-divider>
     </div>
@@ -89,7 +89,7 @@
                   <v-icon end size="small">mdi-clipboard-outline</v-icon>
                 </v-chip>
               </template>
-              <span class="text-caption">Copy to clipboard</span>
+              <span class="text-caption">{{ $t('containers.copyToClipboard') }}</span>
             </v-tooltip>
           </span>
 
@@ -114,19 +114,19 @@
             ref="tabs"
           >
             <v-tab v-if="container.result">
-              <span v-if="smAndUp">Update</span>
+              <span v-if="smAndUp">{{ $t('containers.tabUpdate') }}</span>
               <v-icon>mdi-package-down</v-icon>
             </v-tab>
             <v-tab>
-              <span v-if="smAndUp">Triggers</span>
+              <span v-if="smAndUp">{{ $t('containers.tabTriggers') }}</span>
               <v-icon>mdi-bell-ring</v-icon>
             </v-tab>
             <v-tab>
-              <span v-if="smAndUp">Image</span>
+              <span v-if="smAndUp">{{ $t('containers.tabImage') }}</span>
               <v-icon>mdi-package-variant-closed</v-icon>
             </v-tab>
             <v-tab>
-              <span v-if="smAndUp">Container</span>
+              <span v-if="smAndUp">{{ $t('containers.tabContainer') }}</span>
               <IconRenderer 
                 :icon="container.displayIcon"
                 :size="24"
@@ -134,7 +134,7 @@
               />
             </v-tab>
             <v-tab v-if="container.error">
-              <span v-if="smAndUp">Error</span>
+              <span v-if="smAndUp">{{ $t('containers.tabError') }}</span>
               <v-icon>mdi-alert</v-icon>
             </v-tab>
           </v-tabs>
@@ -179,7 +179,7 @@
                       variant="outlined"
                       v-bind="props"
                     >
-                      Delete
+                      {{ $t('containers.delete') }}
                       <v-icon right>mdi-delete</v-icon>
                     </v-btn>
                   </template>
@@ -187,27 +187,27 @@
                   <v-card class="text-center">
                     <v-app-bar color="error" dark flat dense>
                       <v-toolbar-title class="text-body-1">
-                        Delete the container?
+                        {{ $t('containers.deleteTitle') }}
                       </v-toolbar-title>
                     </v-app-bar>
                     <v-card-subtitle class="text-body-2">
                       <v-row class="mt-2" no-gutters>
                         <v-col>
-                          Delete
+                          {{ $t('containers.delete') }}
                           <span class="font-weight-bold error--text">{{
                             container.name
                           }}</span>
-                          from the list?
+                          {{ $t('containers.deleteFromList') }}
                           <br />
                           <span class="font-italic"
-                            >(The real container won't be deleted)</span
+                            >{{ $t('containers.deleteNote') }}</span
                           >
                         </v-col>
                       </v-row>
                       <v-row>
                         <v-col class="text-center">
                           <v-btn variant="outlined" @click="dialogDelete = false" small>
-                            Cancel
+                            {{ $t('containers.cancel') }}
                           </v-btn>
                           &nbsp;
                           <v-btn
@@ -218,7 +218,7 @@
                               deleteContainer();
                             "
                           >
-                            Delete
+                            {{ $t('containers.delete') }}
                           </v-btn>
                         </v-col>
                       </v-row>
@@ -351,7 +351,7 @@ export default defineComponent({
 
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", `${kind} copied to clipboard`);
+      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
     },
 
     collapseDetail() {

@@ -4,7 +4,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-identifier</v-icon>
       </template>
-      <v-list-item-title>Id</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.id') }}</v-list-item-title>
       <v-list-item-subtitle>
         {{ container.id }}
         <v-tooltip bottom>
@@ -19,7 +19,7 @@
               <v-icon size="small">mdi-clipboard</v-icon>
             </v-btn>
           </template>
-          <span class="text-caption">Copy to clipboard</span>
+          <span class="text-caption">{{ $t('containers.copyToClipboard') }}</span>
         </v-tooltip>
       </v-list-item-subtitle>
     </v-list-item>
@@ -27,28 +27,28 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-pencil</v-icon>
       </template>
-      <v-list-item-title>Name</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.name') }}</v-list-item-title>
       <v-list-item-subtitle>{{ container.name }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item v-if="container.stack">
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-layers-outline</v-icon>
       </template>
-      <v-list-item-title>Stack</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.stack') }}</v-list-item-title>
       <v-list-item-subtitle>{{ container.stack }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-restart</v-icon>
       </template>
-      <v-list-item-title>Status</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.status') }}</v-list-item-title>
       <v-list-item-subtitle>{{ container.status }}</v-list-item-subtitle>
     </v-list-item>
     <v-list-item>
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-update</v-icon>
       </template>
-      <v-list-item-title>Watcher</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.watcher') }}</v-list-item-title>
       <v-list-item-subtitle>
         <router-link to="/configuration/watchers">{{
           container.watcher
@@ -60,7 +60,7 @@
         <v-icon color="secondary">mdi-tag</v-icon>
       </template>
       <v-list-item-title>
-        Include tags
+        {{ $t('detail.includeTags') }}
         <v-tooltip bottom>
           <template v-slot:activator="{ props }">
             <v-btn
@@ -73,7 +73,7 @@
               <v-icon>mdi-regex</v-icon>
             </v-btn>
           </template>
-          <span>Test on regex101.com</span>
+          <span>{{ $t('detail.testRegex101') }}</span>
         </v-tooltip>
       </v-list-item-title>
       <v-list-item-subtitle>{{ container.includeTags }}</v-list-item-subtitle>
@@ -83,7 +83,7 @@
         <v-icon color="secondary">mdi-tag-off</v-icon>
       </template>
       <v-list-item-title>
-        Exclude tags
+        {{ $t('detail.excludeTags') }}
         <v-tooltip bottom>
           <template v-slot:activator="{ props }">
             <v-btn
@@ -96,7 +96,7 @@
               <v-icon>mdi-regex</v-icon>
             </v-btn>
           </template>
-          <span>Test on regex101.com</span>
+          <span>{{ $t('detail.testRegex101') }}</span>
         </v-tooltip>
       </v-list-item-title>
       <v-list-item-subtitle>{{ container.excludeTags }}</v-list-item-subtitle>
@@ -105,7 +105,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-tag-arrow-right</v-icon>
       </template>
-      <v-list-item-title>Transform tags</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.transformTags') }}</v-list-item-title>
       <v-list-item-subtitle>{{
         container.transformTags
       }}</v-list-item-subtitle>
@@ -114,7 +114,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-file-replace</v-icon>
       </template>
-      <v-list-item-title>Link template</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.linkTemplate') }}</v-list-item-title>
       <v-list-item-subtitle>{{
         container.linkTemplate
       }}</v-list-item-subtitle>
@@ -123,7 +123,7 @@
       <template v-slot:prepend>
         <v-icon color="secondary">mdi-link</v-icon>
       </template>
-      <v-list-item-title>Link</v-list-item-title>
+      <v-list-item-title>{{ $t('detail.link') }}</v-list-item-title>
       <v-list-item-subtitle
         ><a :href="container.link" target="_blank">{{ container.link }}</a>
       </v-list-item-subtitle>
@@ -147,7 +147,7 @@ export default defineComponent({
   methods: {
     copyToClipboard(kind: string, value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", `${kind} copied to clipboard`);
+      (this as any).$eventBus.emit("notify", this.$t("common.copied"));
     },
   },
 });

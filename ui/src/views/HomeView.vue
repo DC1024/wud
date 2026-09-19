@@ -14,11 +14,11 @@
             <p class="text-body-2 text-medium-emphasis mb-0">
               <span v-if="containersToUpdateCount > 0" class="d-inline-flex align-center text-warning font-weight-medium">
                 <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
-                {{ containersToUpdateCount }} update{{ containersToUpdateCount > 1 ? 's' : '' }} available for your containers
+                {{ $t('home.updatesAvailable', { n: containersToUpdateCount }) }}
               </span>
               <span v-else class="d-inline-flex align-center text-success font-weight-medium">
                 <v-icon size="16" class="mr-1">mdi-check-circle</v-icon>
-                All your containers are currently up-to-date and running smoothly
+                {{ $t('home.allUpToDate') }}
               </span>
             </p>
           </div>
@@ -34,7 +34,7 @@
             to="/containers?update-available=true"
             class="font-weight-bold text-none rounded-lg"
           >
-            Review Updates
+            {{ $t('home.reviewUpdates') }}
           </v-btn>
           <v-chip
             v-else
@@ -44,7 +44,7 @@
             prepend-icon="mdi-shield-check"
             class="font-weight-bold"
           >
-            Infrastructure Healthy
+            {{ $t('home.infrastructureHealthy') }}
           </v-chip>
         </div>
       </div>
@@ -71,7 +71,7 @@
               {{ containersCount }}
             </div>
             <div class="text-caption font-weight-bold text-grey-darken-1 text-uppercase tracking-wider">
-              Containers
+              {{ $t('home.containersLabel') }}
             </div>
           </div>
 
@@ -100,7 +100,7 @@
               append-icon="mdi-chevron-right"
               to="/containers"
             >
-              {{ containersCount }} containers
+              {{ $t('home.containersCount', { n: containersCount }) }}
             </v-btn>
           </div>
         </v-card>
@@ -125,7 +125,7 @@
               {{ triggersCount }}
             </div>
             <div class="text-caption font-weight-bold text-grey-darken-1 text-uppercase tracking-wider">
-              Triggers
+              {{ $t('home.triggersLabel') }}
             </div>
           </div>
 
@@ -133,7 +133,7 @@
             <div class="status-slot mb-2">
               <span class="text-caption text-medium-emphasis">
                 <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
-                Automations active
+                {{ $t('home.automationsActive') }}
               </span>
             </div>
             <v-btn
@@ -144,7 +144,7 @@
               append-icon="mdi-chevron-right"
               to="/configuration/triggers"
             >
-              {{ triggersCount }} triggers
+              {{ $t('home.triggersCount', { n: triggersCount }) }}
             </v-btn>
           </div>
         </v-card>
@@ -169,7 +169,7 @@
               {{ watchersCount }}
             </div>
             <div class="text-caption font-weight-bold text-grey-darken-1 text-uppercase tracking-wider">
-              Watchers
+              {{ $t('home.watchersLabel') }}
             </div>
           </div>
 
@@ -177,7 +177,7 @@
             <div class="status-slot mb-2">
               <span class="text-caption text-medium-emphasis">
                 <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
-                Polling active
+                {{ $t('home.pollingActive') }}
               </span>
             </div>
             <v-btn
@@ -188,7 +188,7 @@
               append-icon="mdi-chevron-right"
               to="/configuration/watchers"
             >
-              {{ watchersCount }} watchers
+              {{ $t('home.watchersCount', { n: watchersCount }) }}
             </v-btn>
           </div>
         </v-card>
@@ -213,7 +213,7 @@
               {{ registriesCount }}
             </div>
             <div class="text-caption font-weight-bold text-grey-darken-1 text-uppercase tracking-wider">
-              Registries
+              {{ $t('home.registriesLabel') }}
             </div>
           </div>
 
@@ -221,7 +221,7 @@
             <div class="status-slot mb-2">
               <span class="text-caption text-medium-emphasis">
                 <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
-                Registries synced
+                {{ $t('home.registriesSynced') }}
               </span>
             </div>
             <v-btn
@@ -232,7 +232,7 @@
               append-icon="mdi-chevron-right"
               to="/configuration/registries"
             >
-              {{ registriesCount }} registries
+              {{ $t('home.registriesCount', { n: registriesCount }) }}
             </v-btn>
           </div>
         </v-card>
@@ -266,9 +266,11 @@ export default defineComponent({
   computed: {
     containerUpdateMessage() {
       if (this.containersToUpdateCount > 0) {
-        return `${this.containersToUpdateCount} updates available`;
+        return this.$t("home.updatesAvailableShort", {
+          n: this.containersToUpdateCount,
+        });
       }
-      return "all containers are up-to-date";
+      return this.$t("home.allUpToDateShort");
     },
   },
 
@@ -290,7 +292,11 @@ export default defineComponent({
     } catch (e: any) {
       next((vm: any) => {
         if (vm.eventBus) {
-          vm.eventBus.emit("notify", `Error when loading dashboard data (${e.message})`, "error");
+          vm.eventBus.emit(
+            "notify",
+            vm.$t("home.dashboardError", { msg: e.message }),
+            "error",
+          );
         }
       });
     }

@@ -5,7 +5,7 @@
       <v-toolbar color="surface" density="compact" class="px-3 py-1">
         <v-icon :icon="serverIcon" class="mr-2 text-primary" size="24"></v-icon>
         <div class="d-flex align-center">
-          <span class="text-subtitle-1 font-weight-bold mr-2">Server &amp; System Configuration</span>
+          <span class="text-subtitle-1 font-weight-bold mr-2">{{ $t('config.serverTitle') }}</span>
         </div>
 
         <v-spacer></v-spacer>
@@ -14,7 +14,7 @@
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
-          placeholder="Filter parameters..."
+          :placeholder="$t('config.filterParams')"
           density="compact"
           variant="outlined"
           hide-details
@@ -30,7 +30,7 @@
           size="small"
           @click="refreshServer"
           :loading="isLoading"
-          title="Refresh"
+          :title="$t('config.refresh')"
         ></v-btn>
       </v-toolbar>
     </v-card>
@@ -62,7 +62,7 @@
               variant="tonal"
               class="font-weight-medium"
             >
-              {{ card.filteredItems.length }} {{ card.filteredItems.length === 1 ? 'param' : 'params' }}
+              {{ card.filteredItems.length }} {{ $t('config.params', { n: card.filteredItems.length }) }}
             </v-chip>
           </v-toolbar>
 
@@ -83,7 +83,7 @@
                       color="grey"
                       class="opacity-60 hover-opacity-100"
                       @click.stop="copyValue(cfg.key, cfg.value)"
-                      title="Copy value"
+                      :title="$t('config.copyValue')"
                     ></v-btn>
                   </div>
                   <div>
@@ -101,7 +101,7 @@
                     </template>
                     <!-- Empty / Null Value or Empty Object -->
                     <template v-else-if="cfg.value === undefined || cfg.value === null || cfg.value === '' || (typeof cfg.value === 'object' && Object.keys(cfg.value).length === 0)">
-                      <span class="text-caption text-grey font-italic">&lt;empty&gt;</span>
+                      <span class="text-caption text-grey font-italic">{{ $t('common.empty') }}</span>
                     </template>
                     <!-- Complex Object or Array -->
                     <template v-else-if="typeof cfg.value === 'object'">
@@ -122,9 +122,9 @@
             <!-- Empty State -->
             <div v-else class="pa-6 text-center text-grey">
               <v-icon size="36" class="mb-2 opacity-50">{{ card.icon }}</v-icon>
-              <div class="text-body-2" v-if="search">No matching parameters</div>
-              <div class="text-body-2" v-else>Default configuration</div>
-              <div class="text-caption text-grey" v-if="!search">No custom parameters set</div>
+              <div class="text-body-2" v-if="search">{{ $t('config.noMatchingParams') }}</div>
+              <div class="text-body-2" v-else>{{ $t('config.defaultConfig') }}</div>
+              <div class="text-caption text-grey" v-if="!search">{{ $t('config.noCustomParams') }}</div>
             </div>
           </v-card-text>
         </v-card>
@@ -170,19 +170,19 @@ export default defineComponent({
       const sections = [
         {
           id: "server",
-          title: "Server",
+          title: this.$t("config.server"),
           icon: this.serverIcon,
           items: this.formatItems(this.server?.configuration),
         },
         {
           id: "logs",
-          title: "Logs",
+          title: this.$t("config.logs"),
           icon: this.logIcon,
           items: this.formatItems(this.log),
         },
         {
           id: "store",
-          title: "Store",
+          title: this.$t("config.store"),
           icon: this.storeIcon,
           items: this.formatItems(this.store?.configuration),
         },
@@ -239,7 +239,7 @@ export default defineComponent({
           ? JSON.stringify(value, null, 2)
           : String(value);
       navigator.clipboard.writeText(textToCopy);
-      (this as any).$eventBus?.emit("notify", `${key} copied to clipboard`);
+      (this as any).$eventBus?.emit("notify", this.$t("common.copied"));
     },
 
     async refreshServer() {
@@ -256,7 +256,7 @@ export default defineComponent({
       } catch (e: any) {
         (this as any).$eventBus?.emit(
           "notify",
-          `Error when trying to load the server configuration (${e.message})`,
+          this.$t("config.loadServerError", { msg: e.message }),
           "error"
         );
       } finally {
@@ -282,7 +282,7 @@ export default defineComponent({
       next((vm: any) => {
         vm.$eventBus?.emit(
           "notify",
-          `Error when trying to load the server configuration (${e.message})`,
+          vm.$t("config.loadServerError", { msg: e.message }),
           "error"
         );
       });

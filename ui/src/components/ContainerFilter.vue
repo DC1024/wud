@@ -5,7 +5,7 @@
       <!-- Left side: Icon, Title & Counts -->
       <div class="d-flex align-center gap-2">
         <v-icon color="primary" size="24" class="mr-2">mdi-docker</v-icon>
-        <span class="text-subtitle-1 font-weight-bold mr-2">Containers</span>
+        <span class="text-subtitle-1 font-weight-bold mr-2">{{ $t('filter.containers') }}</span>
         <v-chip
           v-if="totalCount !== undefined"
           size="small"
@@ -26,7 +26,7 @@
       <div class="d-flex align-center flex-wrap gap-3">
         <v-switch
           class="switch-compact mr-2"
-          label="Update available"
+          :label="$t('filter.updateAvailable')"
           v-model="updateAvailableLocal"
           @update:modelValue="emitUpdateAvailableChanged"
           :hide-details="true"
@@ -36,7 +36,7 @@
 
         <v-switch
           class="switch-compact mr-2"
-          label="Oldest first"
+          :label="$t('filter.oldestFirst')"
           v-model="oldestFirstLocal"
           @update:modelValue="emitOldestFirstChanged"
           :hide-details="true"
@@ -54,7 +54,7 @@
           class="mr-2"
           @click="resetFilters"
         >
-          Reset
+          {{ $t('filter.reset') }}
         </v-btn>
 
         <v-btn
@@ -67,7 +67,7 @@
           prepend-icon="mdi-refresh"
           class="font-weight-medium"
         >
-          Watch now
+          {{ $t('filter.watchNow') }}
         </v-btn>
       </div>
     </div>
@@ -80,8 +80,8 @@
           v-model="searchQuery"
           @update:modelValue="emitSearchChanged"
           :clearable="true"
-          label="Search"
-          placeholder="Filter containers..."
+          :label="$t('filter.search')"
+          :placeholder="$t('filter.searchPlaceholder')"
           variant="outlined"
           density="compact"
           prepend-inner-icon="mdi-magnify"
@@ -94,7 +94,7 @@
           :items="stacks"
           @update:modelValue="emitStackChanged"
           :clearable="true"
-          label="Stack"
+          :label="$t('filter.stack')"
           variant="outlined"
           density="compact"
           prepend-inner-icon="mdi-layers-outline"
@@ -107,7 +107,7 @@
           :items="watchers"
           @update:modelValue="emitWatcherChanged"
           :clearable="true"
-          label="Watcher"
+          :label="$t('filter.watcher')"
           variant="outlined"
           density="compact"
           prepend-inner-icon="mdi-eye-outline"
@@ -120,7 +120,7 @@
           :items="registries"
           @update:modelValue="emitRegistryChanged"
           :clearable="true"
-          label="Registry"
+          :label="$t('filter.registry')"
           variant="outlined"
           density="compact"
           prepend-inner-icon="mdi-database-outline"
@@ -133,7 +133,7 @@
           :items="updateKinds"
           @update:modelValue="emitUpdateKindChanged"
           :clearable="true"
-          label="Update kind"
+          :label="$t('filter.updateKind')"
           variant="outlined"
           density="compact"
           prepend-inner-icon="mdi-tag-outline"
@@ -141,7 +141,7 @@
       </v-col>
       <v-col cols="12" sm="6" md="4" lg="2">
         <v-autocomplete
-          label="Group by label"
+          :label="$t('filter.groupByLabel')"
           :items="groupLabels"
           v-model="groupByLabelLocal"
           @update:modelValue="emitGroupByLabelChanged"
@@ -306,12 +306,12 @@ export default defineComponent({
       this.isRefreshing = true;
       try {
         const body = await refreshAllContainers();
-        (this as any).$eventBus.emit("notify", "All containers refreshed");
+        (this as any).$eventBus.emit("notify", this.$t("filter.refreshed"));
         this.$emit("refresh-all-containers", body);
       } catch (e: any) {
         (this as any).$eventBus.emit(
           "notify",
-          `Error when trying to refresh all containers (${e.message})`,
+          this.$t("filter.refreshError", { msg: e.message }),
           "error",
         );
       } finally {

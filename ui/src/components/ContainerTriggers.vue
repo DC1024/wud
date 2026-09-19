@@ -9,7 +9,7 @@
         />
       </v-col>
     </v-row>
-    <v-card-text v-else> No triggers associated to the container </v-card-text>
+    <v-card-text v-else>{{ $t('triggers.none') }}</v-card-text>
   </v-container>
 </template>
 

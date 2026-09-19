@@ -29,7 +29,7 @@
         @refresh-all-containers="onRefreshAllContainers"
         @reset-filters="onResetFilters"
       />
-      
+
       <v-divider />
 
       <v-data-table
@@ -55,22 +55,22 @@
                   class="mr-3 group-chevron"
                   @click.stop="toggleGroup(item)"
                 />
-                
+
                 <v-icon size="small" color="primary" class="mr-1.5 opacity-80">mdi-tag-outline</v-icon>
-                
+
                 <span class="group-label-name text-caption font-weight-bold text-uppercase">
                   {{ groupByLabel }}
                 </span>
-                
+
                 <span class="mx-2 text-disabled font-weight-light">/</span>
-                
-                <span 
+
+                <span
                   class="group-label-value font-weight-bold text-body-2"
                   :class="item.value === '(empty)' ? 'text-disabled font-italic' : ''"
                 >
                   {{ item.value }}
                 </span>
-                
+
                 <v-chip
                   size="x-small"
                   variant="tonal"
@@ -78,7 +78,7 @@
                   class="ml-3 font-weight-medium"
                 >
                   <v-icon start size="x-small">mdi-docker</v-icon>
-                  {{ item.items.length }} {{ item.items.length > 1 ? 'containers' : 'container' }}
+                  {{ $t('containers.count', { n: item.items.length }) }}
                 </v-chip>
               </div>
             </td>
@@ -91,10 +91,10 @@
                 {{ item.raw ? item.raw.watcher : item.watcher }}
               </v-chip>
             </template>
-            
+
             <template #[`item.registry`]="{ item }">
               <div class="d-flex align-center">
-                <IconRenderer 
+                <IconRenderer
                   :icon="getRegistryProviderIcon(item.raw ? item.raw.image.registry.name : item.image.registry.name)"
                   :size="20"
                   :margin-right="8"
@@ -112,7 +112,7 @@
                 size="small"
                 class="font-weight-medium cursor-pointer"
                 @click.stop="onStackChipClick(item.raw ? item.raw.stack : item.stack)"
-                title="Filter by this stack"
+                :title="$t('containers.filterByStack')"
               >
                 <v-icon start size="small">mdi-layers-outline</v-icon>
                 {{ item.raw ? item.raw.stack : item.stack }}
@@ -122,7 +122,7 @@
 
             <template #[`item.displayName`]="{ item }">
               <div class="d-flex align-center font-weight-medium">
-                <IconRenderer 
+                <IconRenderer
                   :icon="(item.raw ? item.raw.displayIcon : item.displayIcon) || 'mdi:docker'"
                   :size="20"
                   :margin-right="8"
@@ -147,14 +147,14 @@
                       :color="getNewVersionClass(item.raw || item)"
                       size="small"
                       v-bind="props"
-                      @click.stop="copyToClipboard('container new version', getNewVersion(item.raw || item))"
+                      @click.stop="copyToClipboard(getNewVersion(item.raw || item))"
                       class="cursor-pointer font-weight-bold"
                     >
                       <v-icon start size="small">mdi-arrow-up-bold</v-icon>
                       {{ getNewVersion(item.raw || item) }}
                     </v-chip>
                   </template>
-                  <span class="text-caption">Copy to clipboard</span>
+                  <span class="text-caption">{{ $t('containers.copyToClipboard') }}</span>
                 </v-tooltip>
               </template>
               <template v-else-if="(item.raw ? item.raw.isSnoozed : item.isSnoozed) || (item.raw ? item.raw.snoozedVersion : item.snoozedVersion)">
@@ -169,11 +169,11 @@
                       class="font-weight-medium"
                     >
                       <v-icon start size="small">mdi-bell-sleep</v-icon>
-                      Snoozed ({{ (item.raw ? item.raw.snoozedVersion : item.snoozedVersion) }})
+                      {{ $t('containers.snoozed') }} ({{ (item.raw ? item.raw.snoozedVersion : item.snoozedVersion) }})
                     </v-chip>
                   </template>
                   <span>
-                    Update snoozed{{ (item.raw ? item.raw.snoozedUntil : item.snoozedUntil) ? ` until ${new Date(item.raw ? item.raw.snoozedUntil : item.snoozedUntil).toLocaleString()}` : ' indefinitely' }}
+                    {{ $t('containers.snoozeUpdate') }}{{ (item.raw ? item.raw.snoozedUntil : item.snoozedUntil) ? ` ${$t('containers.untilNextVersion').toLowerCase().replace('until ', 'until ')} ${new Date(item.raw ? item.raw.snoozedUntil : item.snoozedUntil).toLocaleString()}` : '' }}
                   </span>
                 </v-tooltip>
               </template>
@@ -189,15 +189,15 @@
                       class="font-weight-medium"
                     >
                       <v-icon start size="small">mdi-timer-sand</v-icon>
-                      Cooling down
+                      {{ $t('containers.coolingDown') }}
                     </v-chip>
                   </template>
                   <span>
-                    Update available but cooling down{{ (item.raw ? item.raw.coolingDownUntil : item.coolingDownUntil) ? ` until ${new Date(item.raw ? item.raw.coolingDownUntil : item.coolingDownUntil).toLocaleString()}` : '' }}
+                    {{ $t('containers.coolingDown') }}{{ (item.raw ? item.raw.coolingDownUntil : item.coolingDownUntil) ? ` ${new Date(item.raw ? item.raw.coolingDownUntil : item.coolingDownUntil).toLocaleString()}` : '' }}
                   </span>
                 </v-tooltip>
               </template>
-              <span v-else class="text-grey text-caption">Up to date</span>
+              <span v-else class="text-grey text-caption">{{ $t('containers.upToDate') }}</span>
             </template>
 
             <template #[`item.actions`]="{ item }">
@@ -216,19 +216,19 @@
                   <v-list-item
                     v-if="(item.raw ? item.raw.updateAvailable : item.updateAvailable) && canWrite"
                     prepend-icon="mdi-bell-sleep"
-                    title="Snooze update"
+                    :title="$t('containers.snoozeUpdate')"
                     @click.stop="openSnoozeDialog(item.raw || item)"
                   />
                   <v-list-item
                     v-if="((item.raw ? item.raw.isSnoozed : item.isSnoozed) || (item.raw ? item.raw.snoozedVersion : item.snoozedVersion)) && canWrite"
                     prepend-icon="mdi-bell-ring"
-                    title="Unsnooze update"
+                    :title="$t('containers.unsnoozeUpdate')"
                     @click.stop="executeUnsnooze(item.raw || item)"
                   />
                   <v-list-item
                     v-if="deleteEnabled && canWrite"
                     prepend-icon="mdi-delete"
-                    title="Delete container"
+                    :title="$t('containers.deleteContainer')"
                     class="text-error"
                     @click.stop="confirmDelete(item.raw || item)"
                   />
@@ -239,8 +239,8 @@
             <template v-slot:no-data>
               <div class="pa-8 text-center text-grey">
                 <v-icon size="64" class="mb-4 opacity-50">mdi-docker</v-icon>
-                <div class="text-h6">No containers found</div>
-                <div class="text-body-2">Try adjusting your filters</div>
+                <div class="text-h6">{{ $t('containers.noContainers') }}</div>
+                <div class="text-body-2">{{ $t('containers.tryFilters') }}</div>
               </div>
             </template>
           </v-data-table>
@@ -284,7 +284,7 @@
             size="small"
             class="mr-1"
             @click="openSnoozeDialog(selectedContainer)"
-            title="Snooze update"
+            :title="$t('containers.snoozeUpdate')"
           ></v-btn>
           <v-btn
             v-if="(selectedContainer.isSnoozed || selectedContainer.snoozedVersion) && canWrite"
@@ -294,7 +294,7 @@
             size="small"
             class="mr-1"
             @click="executeUnsnooze(selectedContainer)"
-            title="Unsnooze update"
+            :title="$t('containers.unsnoozeUpdate')"
           ></v-btn>
           <v-btn
             v-if="deleteEnabled && canWrite"
@@ -304,27 +304,27 @@
             size="small"
             class="mr-1"
             @click="confirmDelete(selectedContainer)"
-            title="Delete container"
+            :title="$t('containers.deleteContainer')"
           ></v-btn>
-          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" title="Close details"></v-btn>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" :title="$t('containers.closeDetails')"></v-btn>
         </v-toolbar>
 
         <!-- Drawer Content Tabs -->
         <v-tabs v-model="drawerTab" color="primary" align-tabs="start" density="compact" class="border-b px-2 bg-surface">
           <v-tab value="update" v-if="selectedContainer.result">
-            <v-icon start size="small">mdi-package-down</v-icon> Update
+            <v-icon start size="small">mdi-package-down</v-icon> {{ $t('containers.tabUpdate') }}
           </v-tab>
           <v-tab value="triggers">
-            <v-icon start size="small">mdi-bell-ring</v-icon> Triggers
+            <v-icon start size="small">mdi-bell-ring</v-icon> {{ $t('containers.tabTriggers') }}
           </v-tab>
           <v-tab value="image">
-            <v-icon start size="small">mdi-package-variant-closed</v-icon> Image
+            <v-icon start size="small">mdi-package-variant-closed</v-icon> {{ $t('containers.tabImage') }}
           </v-tab>
           <v-tab value="container">
-            <IconRenderer :icon="selectedContainer.displayIcon || 'mdi:docker'" :size="16" :margin-right="4" /> Container
+            <IconRenderer :icon="selectedContainer.displayIcon || 'mdi:docker'" :size="16" :margin-right="4" /> {{ $t('containers.tabContainer') }}
           </v-tab>
           <v-tab value="error" v-if="selectedContainer.error">
-            <v-icon start size="small" color="error">mdi-alert</v-icon> Error
+            <v-icon start size="small" color="error">mdi-alert</v-icon> {{ $t('containers.tabError') }}
           </v-tab>
         </v-tabs>
 
@@ -365,15 +365,16 @@
     <v-dialog v-model="dialogDelete" width="500">
       <v-card class="text-center rounded-lg">
         <v-toolbar color="error" flat>
-          <v-toolbar-title class="text-white">Delete the container?</v-toolbar-title>
+          <v-toolbar-title class="text-white">{{ $t('containers.deleteTitle') }}</v-toolbar-title>
         </v-toolbar>
         <v-card-text class="pt-6 pb-6 text-body-1">
-          Delete <span class="font-weight-bold text-error">{{ containerToDelete?.name }}</span> from the list?<br />
-          <span class="text-caption text-grey font-italic">(The real container won't be deleted)</span>
+          {{ $t('containers.deleteConfirm', { name: `<span class="font-weight-bold text-error">${containerToDelete?.name}</span>` }) }}
+          <br />
+          <span class="text-caption text-grey font-italic">{{ $t('containers.deleteNote') }}</span>
         </v-card-text>
         <v-card-actions class="justify-center pb-6">
-          <v-btn variant="outlined" @click="dialogDelete = false" class="px-6">Cancel</v-btn>
-          <v-btn color="error" variant="flat" @click="executeDelete" class="px-6">Delete</v-btn>
+          <v-btn variant="outlined" @click="dialogDelete = false" class="px-6">{{ $t('containers.cancel') }}</v-btn>
+          <v-btn color="error" variant="flat" @click="executeDelete" class="px-6">{{ $t('containers.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -384,24 +385,24 @@
         <v-toolbar color="primary" flat>
           <v-toolbar-title class="text-white">
             <v-icon start>mdi-bell-sleep</v-icon>
-            Snooze update
+            {{ $t('containers.snoozeTitle') }}
           </v-toolbar-title>
         </v-toolbar>
         <v-card-text class="pt-4 pb-2 text-body-1">
           <div>
-            Snooze update for
+            {{ $t('containers.snoozeUpdate') }}
             <span class="font-weight-bold">{{ containerToSnooze?.displayName || containerToSnooze?.name }}</span>:
           </div>
           <v-radio-group v-model="snoozeDuration" class="mt-3">
-            <v-radio label="Until next version" value="indefinitely" />
-            <v-radio label="For 1 day" value="1_day" />
-            <v-radio label="For 1 week" value="1_week" />
-            <v-radio label="For 1 month" value="1_month" />
+            <v-radio :label="$t('containers.untilNextVersion')" value="indefinitely" />
+            <v-radio :label="$t('containers.for1Day')" value="1_day" />
+            <v-radio :label="$t('containers.for1Week')" value="1_week" />
+            <v-radio :label="$t('containers.for1Month')" value="1_month" />
           </v-radio-group>
         </v-card-text>
         <v-card-actions class="justify-end px-4 pb-4">
-          <v-btn variant="outlined" @click="dialogSnooze = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" :loading="snoozeLoading" @click="executeSnooze">Snooze</v-btn>
+          <v-btn variant="outlined" @click="dialogSnooze = false">{{ $t('containers.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="snoozeLoading" @click="executeSnooze">{{ $t('containers.snooze') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -463,11 +464,11 @@ export default defineComponent({
       oldestFirst: false,
       currentUser: null as any,
       itemsPerPage,
-      
+
       drawerOpen: false,
       selectedContainer: null as any,
       drawerTab: "triggers",
-      
+
       deleteEnabled: false,
       dialogDelete: false,
       containerToDelete: null as any,
@@ -504,33 +505,34 @@ export default defineComponent({
       return this.currentUser.role === "admin" || this.currentUser.role === "rw";
     },
     headers() {
+      const t = (this as any).$t;
       return [
         {
-          title: "Watcher",
+          title: t("containers.watcher"),
           key: "watcher",
           value: (item: any) => item.watcher || "",
           sortable: true,
         },
         {
-          title: "Registry",
+          title: t("containers.registry"),
           key: "registry",
           value: (item: any) => item.image?.registry?.name || "",
           sortable: true,
         },
         {
-          title: "Stack",
+          title: t("containers.stack"),
           key: "stack",
           value: (item: any) => item.stack || "",
           sortable: true,
         },
         {
-          title: "Container",
+          title: t("containers.container"),
           key: "displayName",
           value: (item: any) => item.displayName || item.name || "",
           sortable: true,
         },
         {
-          title: "Version",
+          title: t("containers.version"),
           key: "currentVersion",
           value: (item: any) => item.image?.tag?.value || "",
           sortRaw: (a: any, b: any) => {
@@ -541,7 +543,7 @@ export default defineComponent({
           sortable: true,
         },
         {
-          title: "Update",
+          title: t("containers.update"),
           key: "update",
           value: (item: any) => (item.updateAvailable ? this.getNewVersion(item) : ""),
           sortRaw: (a: any, b: any) => {
@@ -555,7 +557,7 @@ export default defineComponent({
           sortable: true,
         },
         {
-          title: "Actions",
+          title: t("containers.actions"),
           key: "actions",
           sortable: false,
           align: "end",
@@ -652,7 +654,7 @@ export default defineComponent({
         this.openContainerDrawer(item);
       }
     },
-    
+
     getNewVersion(container: any) {
       let newVersion = "unknown";
       if (container.result?.created && container.image.created !== container.result.created) {
@@ -678,9 +680,9 @@ export default defineComponent({
       return "info";
     },
 
-    copyToClipboard(kind: string, value: string) {
+    copyToClipboard(value: string) {
       navigator.clipboard.writeText(value);
-      (this as any).$eventBus.emit("notify", `${kind} copied to clipboard`);
+      (this as any).$eventBus.emit("notify", (this as any).$t("containers.copiedNotify"));
     },
 
     confirmDelete(container: any) {
@@ -699,7 +701,7 @@ export default defineComponent({
           this.selectedContainer = null;
         }
       } catch (e: any) {
-        (this as any).$eventBus.emit("notify", `Error when trying to delete the container (${e.message})`, "error");
+        (this as any).$eventBus.emit("notify", (this as any).$t("containers.deleteError", { msg: e.message }), "error");
       }
       this.containerToDelete = null;
     },
@@ -740,12 +742,12 @@ export default defineComponent({
         if (this.selectedContainer && this.selectedContainer.id === updated.id) {
           this.selectedContainer = { ...this.selectedContainer, ...updated };
         }
-        (this as any).$eventBus.emit("notify", "Update snoozed successfully");
+        (this as any).$eventBus.emit("notify", (this as any).$t("containers.snoozedOk"));
         this.dialogSnooze = false;
       } catch (e: any) {
         (this as any).$eventBus.emit(
           "notify",
-          `Failed to snooze update (${e.message})`,
+          (this as any).$t("containers.snoozeFail", { msg: e.message }),
           "error",
         );
       } finally {
@@ -764,11 +766,11 @@ export default defineComponent({
         if (this.selectedContainer && this.selectedContainer.id === updated.id) {
           this.selectedContainer = { ...this.selectedContainer, ...updated };
         }
-        (this as any).$eventBus.emit("notify", "Update unsnoozed successfully");
+        (this as any).$eventBus.emit("notify", (this as any).$t("containers.unsnoozedOk"));
       } catch (e: any) {
         (this as any).$eventBus.emit(
           "notify",
-          `Failed to unsnooze update (${e.message})`,
+          (this as any).$t("containers.unsnoozeFail", { msg: e.message }),
           "error",
         );
       }
@@ -786,7 +788,7 @@ export default defineComponent({
     onOldestFirstChanged() { this.oldestFirst = !this.oldestFirst; this.updateQueryParams(); },
     onGroupByLabelChanged(val: string) { this.groupByLabel = val; this.updateQueryParams(); },
     onUpdateKindChanged(val: string) { this.updateKindSelected = val; this.updateQueryParams(); },
-    
+
     onResetFilters() {
       this.registrySelected = "";
       this.watcherSelected = "";
@@ -798,7 +800,7 @@ export default defineComponent({
       this.oldestFirst = false;
       this.updateQueryParams();
     },
-    
+
     updateQueryParams() {
       const query: any = {};
       if (this.registrySelected) query["registry"] = this.registrySelected;
@@ -810,7 +812,7 @@ export default defineComponent({
       if (this.groupByLabel) query["group-by-label"] = this.groupByLabel;
       this.$router.push({ query });
     },
-    
+
     onRefreshAllContainers(containersRefreshed: any[]) {
       this.containers = containersRefreshed;
       if (this.selectedContainer) {
@@ -830,7 +832,7 @@ export default defineComponent({
     const ua = to.query["update-available"];
     const of = to.query["oldest-first"];
     const gl = to.query["group-by-label"];
-    
+
     try {
       const containers = await getAllContainers();
       next((vm: any) => {
@@ -845,7 +847,7 @@ export default defineComponent({
       });
     } catch (e: any) {
       next((vm: any) => {
-        vm.$eventBus.emit("notify", `Error when trying to get the containers (${e.message})`, "error");
+        vm.$eventBus.emit("notify", (this as any).$t("containers.containersError", { msg: e.message }), "error");
       });
     }
   },
