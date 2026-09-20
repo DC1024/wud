@@ -241,6 +241,76 @@ describe('Docker Hub Registry tests', () => {
             expect(mockWarn).not.toHaveBeenCalled();
         });
     });
+
+    describe('mirror configuration', () => {
+        test('should treat a custom url without authurl as an anonymous mirror (no token fetch, no Authorization)', async () => {
+            const { default: axios } = await import('axios');
+            axios.mockClear();
+
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://docker.1panel.live',
+            });
+
+            // Default Hub token endpoint must NOT be used for a custom mirror.
+            expect(mirror.configuration.url).toBe('https://docker.1panel.live');
+            expect(mirror.configuration.authurl).toBeUndefined();
+            // `service` defaults to the mirror host when not explicitly set.
+            expect(mirror.configuration.service).toBe('docker.1panel.live');
+
+            mirror.getAuthCredentials = jest.fn().mockReturnValue(null);
+            const image = { name: 'library/nginx' };
+            const requestOptions = { headers: {} };
+
+            const result = await mirror.authenticate(image, requestOptions);
+
+            expect(result.headers.Authorization).toBeUndefined();
+            expect(axios).not.toHaveBeenCalled();
+        });
+
+        test('should fetch a token from the configured authurl/service for an authenticated mirror', async () => {
+            const { default: axios } = await import('axios');
+            axios.mockClear();
+            axios.mockResolvedValue({ data: { token: 'mirror-token' } });
+
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://docker.1panel.live',
+                authurl: 'https://docker.1panel.live/token',
+                service: 'docker.1panel.live',
+            });
+            expect(mirror.configuration.authurl).toBe(
+                'https://docker.1panel.live/token',
+            );
+
+            mirror.getAuthCredentials = jest.fn().mockReturnValue(null);
+            const image = { name: 'library/nginx' };
+            const requestOptions = { headers: {} };
+
+            const result = await mirror.authenticate(image, requestOptions);
+
+            expect(axios).toHaveBeenCalledWith({
+                method: 'GET',
+                url: 'https://docker.1panel.live/token?service=docker.1panel.live&scope=repository:library/nginx:pull&grant_type=password',
+                headers: { Accept: 'application/json' },
+            });
+            expect(result.headers.Authorization).toBe('Bearer mirror-token');
+        });
+
+        test('should strip the mirror host from the image full name', async () => {
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://docker.1panel.live',
+            });
+            const image = {
+                name: 'library/nginx',
+                registry: { url: 'https://docker.1panel.live/v2' },
+            };
+            expect(mirror.getImageFullName(image, '1.21.0')).toBe(
+                'nginx:1.21.0',
+            );
+        });
+    });
 });
 
 testRegistryProvider(Hub, { login: 'testuser', token: 'testtoken' });
