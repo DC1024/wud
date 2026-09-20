@@ -129,6 +129,8 @@ Docker Compose 同理，只改一行：
 | `app/watchers/providers/docker/Docker.ts` | 监控判定改为三优先级，新增 `discoverContainers()` |
 | `Dockerfile` | UI 构建阶段 `npm ci` → `npm install`（`package-lock.json` 未包含新依赖） |
 | `ui/src/views/*`、`ui/src/components/*` | 共 17 个界面文件，硬编码文案改为 `$t()` |
+| `app/registries/providers/hub/Hub.ts` | **Docker Hub 镜像源可配置**：`url`/`authurl`/`service` 改为可经环境变量覆盖；默认字节级保持原生 `registry-1.docker.io`，存量部署零影响 |
+| `app/registries/providers/hub/Hub.test.ts` | 新增 3 个镜像源配置用例（匿名镜像站 / 认证镜像站 / 镜像名去 host 前缀），共 27 用例通过 |
 
 **已汉化的界面**
 
@@ -164,6 +166,46 @@ PUT  /api/containers/watch-preference  设置偏好：{"watcher","name","watched
 ```
 
 `discover` 只做 `docker list`，不查镜像/仓库，所以刷新很快；勾选后偏好**在下一次扫描时生效**，页面会提示"立即生效"按钮（等价于手动触发一次扫描）。
+
+### 🪞 Docker Hub 镜像源可配置（绕过网络封锁）
+
+上游 WUD 的 Hub provider 把镜像仓库地址**硬编码**为 `registry-1.docker.io`、`auth.docker.io/token`、`service=registry.docker.io`。在部分网络（如国内出口、企业防火墙）下，这条链路会被 RST 重置（`ECONNRESET`），导致所有 Docker Hub 容器大面积报 `Error`、无法检测更新——而 GHCR、ECR 等其他源却正常。
+
+本分支让 Hub 的三个字段可通过环境变量覆盖，**默认值时与上游逐字一致**，因此存量部署零影响，只在需要时配置镜像站。
+
+**三种配置语义**
+
+| 环境变量 | 作用 | 何时需要 |
+|---|---|---|
+| `WUD_REGISTRY_HUB_URL` | 镜像仓库 API 基址（manifest / tags 拉取地址） | 想走镜像站时必填 |
+| `WUD_REGISTRY_HUB_AUTHURL` | token 端点（默认 `https://auth.docker.io/token`） | **匿名**镜像站不填；**认证**镜像站填其 token 地址 |
+| `WUD_REGISTRY_HUB_SERVICE` | token 的 `service` 参数（默认 `registry.docker.io`） | 认证镜像站且 service 非默认值才填 |
+
+- **匿名镜像站**（推荐，如 `docker.1panel.live`）：只设 `WUD_REGISTRY_HUB_URL`。此时 `authurl` 缺省 → 不发 `Authorization` 头、也不拉 token，直接匿名拉 manifest / tags。
+- **认证镜像站**：同时设 `WUD_REGISTRY_HUB_URL` + `WUD_REGISTRY_HUB_AUTHURL`，必要时补 `WUD_REGISTRY_HUB_SERVICE`，走其 token 端点鉴权。
+
+**为什么选 `docker.1panel.live` 而非 daocloud**：daocloud 镜像站（`docker.m.daocloud.io`）禁用了 `tags/list` 接口（返回 401 `disable-list-tags`），而 WUD 依赖该接口做 semver 版本发现，禁用后会破坏更新检测；`docker.1panel.live` 匿名可用且完整返回 `tags/list`，因此本分支默认示例用 1panel。
+
+**使用方式（Docker Compose 示例）**
+
+```yaml
+services:
+  wud:
+    image: ghcr.io/dc1024/wud:latest
+    container_name: wud
+    ports:
+      - "3000:3000"
+    environment:
+      - WUD_AUTH_ADMIN_USER=admin
+      - WUD_AUTH_ADMIN_PASSWORD=MySecurePassword123
+      # --- Docker Hub 镜像：绕过出口封锁（匿名镜像站，无需 authurl）---
+      - WUD_REGISTRY_HUB_URL=https://docker.1panel.live
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+```
+
+> 只改这一行环境变量即可；其余 `watch` 标签、`WUD_REGISTRY_HUB_*` 之外的配置全部沿用上游。镜像站可换成你信任的任意公共/私有 OCI 代理，只要它完整实现 `manifest` 与 `tags/list`。
 
 ### ✅ 英文模式与原版逐字一致
 
