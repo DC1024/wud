@@ -8,6 +8,7 @@
         {{ viewTitle }}
       </v-toolbar-title>
       <v-spacer />
+      <ConnectionStatusPill class="mr-4" />
 
       <!-- Language switcher: 中 / EN -->
       <v-btn-toggle
@@ -31,8 +32,12 @@
 import { computed, defineComponent } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import ConnectionStatusPill from "./ConnectionStatusPill.vue";
 
 export default defineComponent({
+  components: {
+    ConnectionStatusPill
+  },
   props: {
     user: {
       type: Object,

@@ -115,6 +115,20 @@ export default {
     enableWatchOk: "已开始监控 {name}，下次扫描后即可看到",
     enableWatchError: "启用监控失败（{msg}）",
     openWatchlist: "打开监控清单",
+    // 上游 9.1.0 手动更新弹窗
+    updateTitle: "更新容器",
+    currentVersion: "当前版本",
+    availableVersion: "可用版本",
+    loadingTriggers: "正在加载触发器……",
+    noUpdateTrigger:
+      "该容器未配置任何更新触发器（docker / dockercompose / command / nomad）。",
+    targetTrigger: "目标触发器",
+    triggerToExecute: "选择要执行的触发器",
+    unknownContainer: "未知容器",
+    unknownVersion: "未知",
+    updateOk: "已成功为 {name} 触发更新",
+    updateError: "触发更新出错（{msg}）",
+    refreshContainersError: "刷新容器时出错（{msg}）",
   },
   home: {
     brand: "What's Up Docker?",
@@ -166,6 +180,7 @@ export default {
     updateKind: "更新类型",
     groupByLabel: "按标签分组",
     refreshed: "已刷新所有容器",
+    watchStarted: "已开始扫描，实时更新已启用。",
     refreshError: "刷新所有容器时出错（{msg}）",
   },
   triggers: {
@@ -201,6 +216,16 @@ export default {
     containerNewVersion: "容器新版本",
     updateTag: "更新标签",
     updateDigest: "更新摘要",
+  },
+  // 上游 9.1.0 SSE 连接状态指示器
+  connection: {
+    reconnect: "重新连接",
+  },
+  // 上游 9.1.0 实时扫描浮层
+  liveWatch: {
+    title: "实时监控",
+    progress: "进度",
+    inspecting: "正在检查：",
   },
   watchlist: {
     title: "监控清单",

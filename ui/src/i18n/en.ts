@@ -117,6 +117,21 @@ export default {
     enableWatchOk: "Now monitoring {name}, it will show up after the next scan",
     enableWatchError: "Error when enabling the monitoring ({msg})",
     openWatchlist: "Open the watch list",
+    // Upstream 9.1.0 manual-update dialog. Values kept verbatim so the specs
+    // that assert on the English UI (see tests/setup.ts) keep passing.
+    updateTitle: "Update container",
+    currentVersion: "Current version",
+    availableVersion: "Available version",
+    loadingTriggers: "Loading triggers...",
+    noUpdateTrigger:
+      "No update trigger (docker, dockercompose, command, nomad) is configured for this container.",
+    targetTrigger: "Target trigger",
+    triggerToExecute: "Trigger to execute",
+    unknownContainer: "Unknown container",
+    unknownVersion: "unknown",
+    updateOk: "Update triggered successfully for {name}",
+    updateError: "Update triggered with error ({msg})",
+    refreshContainersError: "Error when trying to refresh containers ({msg})",
   },
   home: {
     brand: "What's Up Docker?",
@@ -168,6 +183,7 @@ export default {
     updateKind: "Update kind",
     groupByLabel: "Group by label",
     refreshed: "All containers refreshed",
+    watchStarted: "Watch started. Live updates enabled.",
     refreshError: "Error when trying to refresh all containers ({msg})",
   },
   triggers: {
@@ -204,6 +220,16 @@ export default {
     containerNewVersion: "container new version",
     updateTag: "update tag",
     updateDigest: "update digest",
+  },
+  // Upstream 9.1.0 SSE connection indicator (ConnectionStatusPill).
+  connection: {
+    reconnect: "Reconnect",
+  },
+  // Upstream 9.1.0 live scan HUD (LiveWatchHud).
+  liveWatch: {
+    title: "Live Watch",
+    progress: "Progress",
+    inspecting: "Inspecting:",
   },
   watchlist: {
     title: "Watch List",

@@ -59,7 +59,7 @@ async function refreshAllContainers() {
   if (isDemoMode()) {
     return mockService.refreshAllContainers();
   }
-  const response = await fetch(url("api/containers/watch"), {
+  const response = await fetch(url("api/containers/watch?async=true"), {
     method: "POST",
     credentials: "include",
   });
@@ -95,7 +95,15 @@ async function getContainerTriggers(containerId) {
   return response.json();
 }
 
-async function runTrigger({ containerId, triggerType, triggerName }) {
+async function runTrigger({
+  containerId,
+  triggerType,
+  triggerName,
+}: {
+  containerId: string;
+  triggerType: string;
+  triggerName: string;
+}) {
   if (isDemoMode()) {
     return mockService.runContainerTrigger({ containerId, triggerType, triggerName });
   }
@@ -107,6 +115,10 @@ async function runTrigger({ containerId, triggerType, triggerName }) {
       headers: { "Content-Type": "application/json" },
     },
   );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || response.statusText);
+  }
   return response.json();
 }
 
