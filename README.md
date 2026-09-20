@@ -46,7 +46,7 @@
 ## 🇨🇳 简体中文汉化分支说明
 
 > **English:** this is a Simplified-Chinese localization fork of [getwud/wud](https://github.com/getwud/wud).
-> Prebuilt image: `ghcr.io/dc1024/wud:latest` (public) on branch `i18n-zh`. The UI defaults to Chinese and ships a
+> Prebuilt image: `ghcr.io/dc1024/wud_zh:latest` (public) on branch `i18n-zh`. The UI defaults to Chinese and ships a
 > built-in 中文 / English switch; switching to English reproduces the upstream wording verbatim. The localization
 > itself only touches `ui/`; the one backend addition is the **watch list** feature (`app/`), which lets you choose
 > from the web UI which containers WUD must monitor, stored in a new `watched_containers` table. Every upstream
@@ -58,13 +58,14 @@
 | | |
 |---|---|
 | 分支 | **`i18n-zh`** |
-| 预构建镜像 | **`ghcr.io/dc1024/wud:latest`**（公开，无需登录即可拉取） |
-| 基于上游版本 | `9.0.2` |
+| 仓库名 | **`DC1024/wud_zh`**（原名 `DC1024/wud`，已更名；镜像同步改为 `ghcr.io/dc1024/wud_zh`） |
+| 预构建镜像 | **`ghcr.io/dc1024/wud_zh:latest`**（公开，无需登录即可拉取） |
+| 基于上游版本 | `9.1.0` |
 | 改动规模 | 41 个文件，+2957 / −267（主体是 `ui/` 前端；另含一项后端增强「监控清单」，向后兼容、不改上游行为） |
 
 ### 🚀 直接使用汉化镜像
 
-把上游镜像名换成 `ghcr.io/dc1024/wud:latest` 即可，**环境变量、触发器、卷映射、REST API 行为与上游完全一致**（只是多出「监控清单」的两个新增接口，纯增量，见下文）：
+把上游镜像名换成 `ghcr.io/dc1024/wud_zh:latest` 即可，**环境变量、触发器、卷映射、REST API 行为与上游完全一致**（只是多出「监控清单」的两个新增接口，纯增量，见下文）：
 
 ```bash
 docker run -d \
@@ -73,7 +74,7 @@ docker run -d \
   -e WUD_AUTH_ADMIN_USER="admin" \
   -e WUD_AUTH_ADMIN_PASSWORD="MySecurePassword123" \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/dc1024/wud:latest
+  ghcr.io/dc1024/wud_zh:latest
 ```
 
 Docker Compose 同理，只改一行：
@@ -82,7 +83,7 @@ Docker Compose 同理，只改一行：
  services:
    wud:
 -    image: getwud/wud:latest
-+    image: ghcr.io/dc1024/wud:latest
++    image: ghcr.io/dc1024/wud_zh:latest
 ```
 
 ### 🌐 语言切换
@@ -105,8 +106,8 @@ Docker Compose 同理，只改一行：
 | 文件 | 作用 |
 |---|---|
 | `ui/src/i18n/index.ts` | i18n 入口：默认语言、读写 `wud-lang`、导出 `currentLocale` / `setLocale()`、同步 `<html lang>` |
-| `ui/src/i18n/zh-CN.ts` | 简体中文消息包（13 个命名空间 / 239 条） |
-| `ui/src/i18n/en.ts` | 英文消息包（与中文包键位对称，239 条） |
+| `ui/src/i18n/zh-CN.ts` | 简体中文消息包（15 个命名空间 / 279 条） |
+| `ui/src/i18n/en.ts` | 英文消息包（与中文包键位对称，279 条） |
 | `ui/src/views/WatchlistView.vue` | 监控清单页面（列表 + 勾选 + 来源标识 + 待生效提示） |
 | `ui/src/services/mock/data/discovered.ts` | 监控清单页的演示数据（复刻三态语义） |
 | `app/store/watchPreference.ts` | 监控偏好读写层（`watched_containers` 表，三态语义 + fail-safe） |
@@ -191,7 +192,7 @@ PUT  /api/containers/watch-preference  设置偏好：{"watcher","name","watched
 ```yaml
 services:
   wud:
-    image: ghcr.io/dc1024/wud:latest
+    image: ghcr.io/dc1024/wud_zh:latest
     container_name: wud
     ports:
       - "3000:3000"
@@ -224,7 +225,7 @@ services:
 ### 📦 镜像构建与发布
 
 - 由 GitHub Actions 在 push `i18n-zh` 时自动构建（约 1~3 分钟），推送到 GHCR，标签为 `latest` 与 `sha-<commit>`
-- 构建时从 `app/package.json` 读取版本号并追加 `-zh` 后缀写入 `WUD_VERSION`，因此界面显示的版本是 `9.0.2-zh` 而不是 `unknown`
+- 构建时把 `WUD_VERSION` 固定写为 `wud_zh-beta1.0`（见 `.github/workflows/docker-image.yml`），因此界面显示的版本是 `wud_zh-beta1.0`
 - 也可在仓库 **Actions → Build and push WUD (zh-CN) image → Run workflow** 手动触发
 - 需要 arm64 等多架构时，在 workflow 的构建步骤加上 `platforms: linux/amd64,linux/arm64`
 
