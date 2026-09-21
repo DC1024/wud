@@ -344,6 +344,51 @@ export const mockService = {
     return JSON.parse(JSON.stringify(mockRegistries));
   },
 
+  // Hub mirror sources (demo data)
+  async getHubMirrors() {
+    await delay(150);
+    return {
+      ui: ["https://docker.m.daocloud.io", "https://docker.1ms.run"],
+      effective: ["https://docker.m.daocloud.io"],
+      health: [
+        {
+          url: "https://docker.m.daocloud.io",
+          ok: true,
+          status: 200,
+          kind: "bearer",
+          auth: "Bearer (token endpoint)",
+        },
+        {
+          url: "https://docker.1ms.run",
+          ok: true,
+          status: 200,
+          kind: "anonymous",
+          auth: "Anonymous",
+        },
+      ],
+    };
+  },
+
+  async setHubMirrors(mirrors: string[]) {
+    await delay(300);
+    return {
+      ui: Array.isArray(mirrors) ? mirrors : [],
+      effective: Array.isArray(mirrors) && mirrors.length > 0 ? [mirrors[0]] : [],
+    };
+  },
+
+  async testHubMirror(urlToTest: string) {
+    await delay(400);
+    return {
+      url: urlToTest,
+      ok: true,
+      status: 200,
+      kind: "bearer",
+      auth: "Bearer (token endpoint)",
+      error: undefined,
+    };
+  },
+
   // Triggers
   async getAllTriggers() {
     await delay(150);

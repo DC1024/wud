@@ -96,4 +96,54 @@ async function getAllRegistries(): Promise<any> {
   return data;
 }
 
-export { getRegistryIcon, getRegistryProviderIcon, getAllRegistries };
+/**
+ * Get the hub mirror list (UI-managed + effective) and per-mirror health.
+ * @returns {Promise<{ui: string[], effective: string[], health: any[]}>}
+ */
+async function getHubMirrors(): Promise<any> {
+  if (isDemoMode()) {
+    return mockService.getHubMirrors();
+  }
+  const response = await fetch(url("api/registries/hub/mirrors"), {
+    credentials: "include",
+  });
+  return response.json();
+}
+
+/**
+ * Replace the UI-managed hub mirror list.
+ * @param mirrors
+ * @returns {Promise<any>}
+ */
+async function setHubMirrors(mirrors: string[]): Promise<any> {
+  if (isDemoMode()) {
+    return mockService.setHubMirrors(mirrors);
+  }
+  const response = await fetch(url("api/registries/hub/mirrors"), {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mirrors }),
+  });
+  return response.json();
+}
+
+/**
+ * Probe a single mirror URL.
+ * @param url the mirror base URL to test
+ * @returns {Promise<any>}
+ */
+async function testHubMirror(urlToTest: string): Promise<any> {
+  if (isDemoMode()) {
+    return mockService.testHubMirror(urlToTest);
+  }
+  const response = await fetch(url("api/registries/hub/mirrors/test"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: urlToTest }),
+  });
+  return response.json();
+}
+
+export { getRegistryIcon, getRegistryProviderIcon, getAllRegistries, getHubMirrors, setHubMirrors, testHubMirror };

@@ -243,9 +243,11 @@ describe('Docker Hub Registry tests', () => {
     });
 
     describe('mirror configuration', () => {
-        test('should treat a custom url without authurl as an anonymous mirror (no token fetch, no Authorization)', async () => {
+        test('should auto-discover a custom mirror without authurl (probe /v2/, no Bearer realm => anonymous)', async () => {
             const { default: axios } = await import('axios');
             axios.mockClear();
+            // Anonymous mirror: /v2/ returns no WWW-Authenticate header.
+            axios.mockResolvedValue({ headers: {} });
 
             const mirror = new Hub();
             await mirror.register('registry', 'hub', 'test', {
@@ -264,8 +266,57 @@ describe('Docker Hub Registry tests', () => {
 
             const result = await mirror.authenticate(image, requestOptions);
 
+            // The mirror was probed for its Bearer realm.
+            expect(axios).toHaveBeenCalledWith({
+                method: 'GET',
+                url: 'https://docker.1panel.live/v2/',
+                validateStatus: expect.any(Function),
+                timeout: expect.any(Number),
+            });
+            // No Bearer realm advertised => treated as anonymous.
             expect(result.headers.Authorization).toBeUndefined();
-            expect(axios).not.toHaveBeenCalled();
+        });
+
+        test('should auto-discover a Bearer token from a mirror advertising a realm', async () => {
+            const { default: axios } = await import('axios');
+            axios.mockClear();
+            // First call = /v2/ probe advertising the realm.
+            // Second call = token exchange returning the pull token.
+            axios
+                .mockResolvedValueOnce({
+                    headers: {
+                        'www-authenticate':
+                            'Bearer realm="https://m.daocloud.io/auth/token",service="docker.m.daocloud.io"',
+                    },
+                })
+                .mockResolvedValueOnce({ data: { token: 'daocloud-token' } });
+
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://docker.m.daocloud.io',
+            });
+            expect(mirror.configuration.authurl).toBeUndefined();
+
+            mirror.getAuthCredentials = jest.fn().mockReturnValue(null);
+            const image = { name: 'library/nginx' };
+            const requestOptions = { headers: {} };
+
+            const result = await mirror.authenticate(image, requestOptions);
+
+            expect(axios).toHaveBeenNthCalledWith(1, {
+                method: 'GET',
+                url: 'https://docker.m.daocloud.io/v2/',
+                validateStatus: expect.any(Function),
+                timeout: expect.any(Number),
+            });
+            expect(axios).toHaveBeenNthCalledWith(2, {
+                method: 'GET',
+                url: 'https://m.daocloud.io/auth/token?scope=repository%3Alibrary%2Fnginx%3Apull&service=docker.m.daocloud.io',
+                headers: { Accept: 'application/json' },
+                validateStatus: expect.any(Function),
+                timeout: expect.any(Number),
+            });
+            expect(result.headers.Authorization).toBe('Bearer daocloud-token');
         });
 
         test('should fetch a token from the configured authurl/service for an authenticated mirror', async () => {
@@ -309,6 +360,57 @@ describe('Docker Hub Registry tests', () => {
             expect(mirror.getImageFullName(image, '1.21.0')).toBe(
                 'nginx:1.21.0',
             );
+        });
+
+        test('should fail over to the next mirror when the first one fails', async () => {
+            const { default: axios } = await import('axios');
+            axios.mockClear();
+            // Mirror 1: anonymous /v2/ probe succeeds (no realm) but the
+            // manifest call fails with 401. Mirror 2: succeeds.
+            axios
+                .mockResolvedValueOnce({ headers: {} }) // probe mirror1 /v2/
+                .mockRejectedValueOnce({ response: { status: 401 } }) // mirror1 manifest
+                .mockResolvedValueOnce({ headers: {} }) // probe mirror2 /v2/
+                .mockResolvedValueOnce({ data: { name: 'nginx', tags: ['latest'] } }); // mirror2 manifest
+
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://bad.example.com,https://good.example.com',
+            });
+            // First mirror is the registry base.
+            expect(mirror.configuration.url).toBe('https://bad.example.com');
+            const image = {
+                name: 'library/nginx',
+                registry: { url: 'https://bad.example.com/v2' },
+            };
+
+            const tags = await mirror.getTags(image);
+
+            expect(tags).toEqual(['latest']);
+            // 4 axios calls total: probe1 + fail1 + probe2 + ok2.
+            expect(axios).toHaveBeenCalledTimes(4);
+            // The second manifest call targeted the good mirror.
+            expect(axios).toHaveBeenNthCalledWith(4, expect.objectContaining({
+                url: 'https://good.example.com/v2/library/nginx/tags/list?n=1000',
+            }));
+        });
+
+        test('should re-throw when every mirror fails', async () => {
+            const { default: axios } = await import('axios');
+            axios.mockClear();
+            axios.mockResolvedValue({ headers: {} }); // every probe anonymous
+            axios.mockRejectedValue({ response: { status: 404 } }); // every manifest 404
+
+            const mirror = new Hub();
+            await mirror.register('registry', 'hub', 'test', {
+                url: 'https://a.example.com,https://b.example.com',
+            });
+            const image = {
+                name: 'library/nginx',
+                registry: { url: 'https://a.example.com/v2' },
+            };
+
+            await expect(mirror.getTags(image)).rejects.toBeDefined();
         });
     });
 });

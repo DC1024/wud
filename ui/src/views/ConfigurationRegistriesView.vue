@@ -120,6 +120,22 @@
           <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" title="Close details"></v-btn>
         </v-toolbar>
 
+        <!-- Hub mirror sources action (only meaningful for the hub provider) -->
+        <div
+          v-if="selectedRegistry && selectedRegistry.type === 'hub'"
+          class="pa-3 border-b bg-surface"
+        >
+          <v-btn
+            color="primary"
+            variant="tonal"
+            block
+            prepend-icon="mdi-format-list-numbered"
+            @click="mirrorEditorOpen = true"
+          >
+            {{ $t("hubMirrors.edit") }}
+          </v-btn>
+        </div>
+
         <!-- Drawer Body -->
         <div class="overflow-y-auto" style="max-height: calc(100vh - 64px);">
           <configuration-drawer-content
@@ -129,13 +145,21 @@
         </div>
       </template>
     </v-navigation-drawer>
+
+    <!-- Hub mirror sources editor -->
+    <hub-mirrors-editor
+      v-model="mirrorEditorOpen"
+      :read-only="isReadOnly"
+    />
   </v-container>
 </template>
 
 <script lang="ts">
 import ConfigurationDrawerContent from "@/components/ConfigurationDrawerContent.vue";
 import IconRenderer from "@/components/IconRenderer.vue";
+import HubMirrorsEditor from "@/components/HubMirrorsEditor.vue";
 import { getAllRegistries, getRegistryIcon, getRegistryProviderIcon } from "@/services/registry";
+import { getUser } from "@/services/auth";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -143,6 +167,7 @@ export default defineComponent({
   components: {
     ConfigurationDrawerContent,
     IconRenderer,
+    HubMirrorsEditor,
   },
 
   data() {
@@ -166,6 +191,8 @@ export default defineComponent({
       selectedRegistry: null as any,
       isLoading: false,
       itemsPerPage,
+      mirrorEditorOpen: false,
+      currentUser: null as any,
     };
   },
 
@@ -179,9 +206,23 @@ export default defineComponent({
     },
   },
 
+  async mounted() {
+    try {
+      this.currentUser = await getUser();
+    } catch {
+      // ignore; isReadOnly stays true (safe default)
+    }
+  },
+
   computed: {
     registryIcon(): string {
       return getRegistryIcon();
+    },
+    isReadOnly(): boolean {
+      if (!this.currentUser) {
+        return true;
+      }
+      return this.currentUser.role !== "admin" && this.currentUser.role !== "rw";
     },
     headers() {
       return [
