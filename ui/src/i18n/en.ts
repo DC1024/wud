@@ -380,10 +380,10 @@ export default {
     // Add-server wizard
     wizardTitle: "Add a monitored server",
     wizardSubtitle:
-      "This wizard prepares everything on the Z4Pro side (SSH key + tunnel sidecar) and hands you the exact commands to run on the target host. The target is never expected to run WUD.",
+      "This wizard prepares everything on the WUD host side (SSH key + tunnel sidecar) and hands you the exact commands to run on the target host. The target is never expected to run WUD.",
     step: "Step {n}",
     step1Title: "Connection",
-    step1Hint: "Give this server a short name and its SSH endpoint. The tunnel will forward the target's read-only Docker API to Z4Pro.",
+    step1Hint: "Give this server a short name and its SSH endpoint. The tunnel will forward the target's read-only Docker API to the WUD host.",
     nameLabel: "Server name",
     namePlaceholder: "e.g. nas, vps-tx, pi4",
     sshHostLabel: "SSH host",
@@ -408,14 +408,14 @@ export default {
       "Create /opt/wud-remote/docker-compose.yml on the target with this content:",
     step2UserTitle: "Create the tunnel user and authorize the key",
     step2UserHint: "Then run (this creates a no-login user and adds the public key):",
-    step2PubkeyTitle: "Public key to authorize (Z4Pro side, already generated)",
-    // Step 3 - Z4Pro side
-    step3Title: "Finish on the Z4Pro",
+    step2PubkeyTitle: "Public key to authorize (WUD host side, already generated)",
+    // Step 3 - WUD host side
+    step3Title: "Finish on the WUD host",
     step3Hint:
-      "Add this block to /zspace/applications/services/zdocker/config/compose_config/wud.yaml, then rebuild. Only add a WUD_TRIGGER_DOCKER_<NAME>_* line if you also want WUD to be able to update containers on that server.",
+      "Add this block to your WUD compose file (wud.yaml), then rebuild. Only add a WUD_TRIGGER_DOCKER_<NAME>_* line if you also want WUD to be able to update containers on that server.",
     copyYaml: "Copy wud.yaml block",
     step3RebuildTitle: "Rebuild WUD",
-    step3RebuildHint: "Run on the Z4Pro (compose dir shares project name, do NOT use --remove-orphans):",
+    step3RebuildHint: "Run on the WUD host (if the compose file shares its project with other services, do NOT use --remove-orphans):",
     // Remove guide
     removeTitle: "Remove a server",
     removeHint:

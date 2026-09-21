@@ -373,11 +373,11 @@ export default {
     // 添加服务器向导
     wizardTitle: "添加受监控的服务器",
     wizardSubtitle:
-      "本向导会在 Z4Pro 侧准备好一切（SSH 密钥 + 隧道 sidecar），并把需要在目标主机上执行的命令交给你。目标主机无需安装 WUD。",
+      "本向导会在 WUD 主机侧准备好一切（SSH 密钥 + 隧道 sidecar），并把需要在目标主机上执行的命令交给你。目标主机无需安装 WUD。",
     step: "第 {n} 步",
     step1Title: "连接信息",
     step1Hint:
-      "给这台服务器起个简短的名字并填写其 SSH 端点。隧道会把目标主机只读的 Docker API 转发到 Z4Pro。",
+      "给这台服务器起个简短的名字并填写其 SSH 端点。隧道会把目标主机只读的 Docker API 转发到 WUD 主机。",
     nameLabel: "服务器名称",
     namePlaceholder: "例如 nas、vps-tx、pi4",
     sshHostLabel: "SSH 主机",
@@ -401,14 +401,14 @@ export default {
     step2ProxyBlockHint: "在目标机创建 /opt/wud-remote/docker-compose.yml，内容如下：",
     step2UserTitle: "创建隧道账号并授权公钥",
     step2UserHint: "然后执行（创建无登录账号并写入公钥）：",
-    step2PubkeyTitle: "要授权的公钥（Z4Pro 侧已生成）",
-    // 第 3 步 - Z4Pro 侧
-    step3Title: "在 Z4Pro 上收尾",
+    step2PubkeyTitle: "要授权的公钥（WUD 主机侧已生成）",
+    // 第 3 步 - WUD 主机侧
+    step3Title: "在 WUD 主机上收尾",
     step3Hint:
-      "把下面这段追加到 /zspace/applications/services/zdocker/config/compose_config/wud.yaml，然后重建。只有当你希望 WUD 能更新那台服务器的容器时，才额外添加 WUD_TRIGGER_DOCKER_<名称>_* 行。",
+      "把下面这段追加到你的 WUD compose 文件（wud.yaml），然后重建。只有当你希望 WUD 能更新那台服务器的容器时，才额外添加 WUD_TRIGGER_DOCKER_<名称>_* 行。",
     copyYaml: "复制 wud.yaml 片段",
     step3RebuildTitle: "重建 WUD",
-    step3RebuildHint: "在 Z4Pro 上执行（compose 目录共用 project 名，切勿加 --remove-orphans）：",
+    step3RebuildHint: "在 WUD 主机上执行（若 compose 文件与其它服务共用同一 project 名，切勿加 --remove-orphans）：",
     // 删除引导
     removeTitle: "移除服务器",
     removeHint:

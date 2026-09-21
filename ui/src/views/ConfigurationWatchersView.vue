@@ -581,7 +581,7 @@ curl -s -o /dev/null -w '%{http_code}\\n' -X POST http://127.0.0.1:{{port}}/cont
     },
     authorizedKeysLine(): string {
       const name = this.nameSanitized || "server";
-      return `restrict,port-forwarding,permitopen="127.0.0.1:${this.wizard.proxyPort || 2375}",command="/bin/false" ssh-ed25519 <PASTE_PUBLIC_KEY_HERE> wud-tunnel-${name}@z4pro`;
+      return `restrict,port-forwarding,permitopen="127.0.0.1:${this.wizard.proxyPort || 2375}",command="/bin/false" ssh-ed25519 <PASTE_PUBLIC_KEY_HERE> wud-tunnel-${name}@wud-host`;
     },
     wudYamlBlock(): string {
       const name = this.nameSanitized || "server";
@@ -606,12 +606,12 @@ services:
 
   docker-tunnel-{{name}}:
     image: wud-ssh-tunnel:local
-    build: { context: /data_n002/wud-remote }
+    build: { context: /opt/wud-remote }
     container_name: wud-tunnel-{{name}}
     restart: unless-stopped
     networks: [wud-remote]
     volumes:
-      - /data_n002/wud-remote/ssh:/root/.ssh:ro
+      - /opt/wud-remote/ssh:/root/.ssh:ro
     command: >
       ssh -N -L 0.0.0.0:2375:127.0.0.1:{{proxyPort}}
       -i /root/.ssh/id_ed25519_{{name}}
@@ -631,7 +631,7 @@ networks:
       });
     },
     rebuildCommand(): string {
-      return `cd /zspace/applications/services/zdocker/config/compose_config
+      return `cd <your WUD compose directory>
 cp wud.yaml wud.yaml.bak.$(date +%Y%m%d%H%M%S)
 # edit wud.yaml, then:
 docker compose -f wud.yaml config -q
@@ -642,14 +642,14 @@ docker logs wud 2>&1 | grep -E 'Register watcher|Listening to docker events'`;
     removeSidecarCommand(): string {
       const name = this.removeTarget ? this.removeTarget.name : "server";
       const upper = name.toUpperCase();
-      return `cd /zspace/applications/services/zdocker/config/compose_config
+      return `cd <your WUD compose directory>
 docker rm -f wud-tunnel-${name}
 # then strip the "server ${name}" watcher block from wud.yaml:
 #   services.wud.environment: WUD_WATCHER_DOCKER_${upper}_* (and WUD_TRIGGER_DOCKER_${upper}_* if any)
 #   services.docker-tunnel-${name}: (the whole sidecar service)
 docker compose -f wud.yaml up -d
 # optional: rm the key so it can't be reused
-rm -f /data_n002/wud-remote/ssh/id_ed25519_${name}`;
+rm -f /opt/wud-remote/ssh/id_ed25519_${name}`;
     },
   },
 
