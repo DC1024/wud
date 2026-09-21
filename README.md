@@ -225,7 +225,7 @@ services:
 ### 📦 镜像构建与发布
 
 - 由 GitHub Actions 在 push `i18n-zh` 时自动构建（约 1~3 分钟），推送到 GHCR，标签为 `latest` 与 `sha-<commit>`
-- 构建时把 `WUD_VERSION` 固定写为 `wud_zh-beta1.2`（见 `.github/workflows/docker-image.yml`），因此界面显示的版本是 `wud_zh-beta1.2`。版本号规则：无新功能则维持，有实质更新则最后一位 +0.1（1.0 → 1.1 → 1.2）
+- 构建时把 `WUD_VERSION` 固定写为 `wud_zh-beta1.3`（见 `.github/workflows/docker-image.yml`），因此界面显示的版本是 `wud_zh-beta1.3`。版本号规则：无新功能则维持，有实质更新则最后一位 +0.1（1.0 → 1.1 → 1.2 → 1.3）
 - 也可在仓库 **Actions → Build and push WUD (zh-CN) image → Run workflow** 手动触发
 - 需要 arm64 等多架构时，在 workflow 的构建步骤加上 `platforms: linux/amd64,linux/arm64`
 
