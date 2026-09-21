@@ -364,7 +364,6 @@ export default {
     subtitle:
       "The Docker daemons WUD connects to. Local is this host's socket; each remote entry is reached through a dedicated SSH tunnel sidecar plus a read-only socket proxy on the target.",
     add: "Add server",
-    searchServers: "Search servers...",
     noServers: "No servers found",
     noServersConfigured:
       "WUD runs a default local watcher. Add a remote one to monitor other machines.",

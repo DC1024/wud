@@ -17,7 +17,7 @@
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
-          :placeholder="$t('servers.searchServers')"
+          :placeholder="$t('config.searchWatchers')"
           density="compact"
           variant="outlined"
           hide-details

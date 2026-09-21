@@ -357,7 +357,6 @@ export default {
     subtitle:
       "WUD 连接的那些 Docker 守护进程。本地（local）走本机 socket；每台远程主机都通过一条专用 SSH 隧道 sidecar 加对端只读 socket 代理接入。",
     add: "添加服务器",
-    searchServers: "搜索服务器……",
     noServers: "未找到服务器",
     noServersConfigured:
       "WUD 默认运行一个本地监视器。要监控其它机器，请添加远程服务器。",
