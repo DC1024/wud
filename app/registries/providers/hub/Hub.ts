@@ -202,14 +202,19 @@ class Hub extends Custom {
     }
 
     private isDefaultHub(url: string): boolean {
-        return Hub.trimTrailingSlash(url) === Hub.trimTrailingSlash(DEFAULT_HUB_URL);
+        return (
+            Hub.trimTrailingSlash(url) ===
+            Hub.trimTrailingSlash(DEFAULT_HUB_URL)
+        );
     }
 
     private getHostOf(url: string): string {
         try {
             return new URL(url).host;
         } catch {
-            return String(url || '').replace(/^https?:\/\//, '').split('/')[0];
+            return String(url || '')
+                .replace(/^https?:\/\//, '')
+                .split('/')[0];
         }
     }
 

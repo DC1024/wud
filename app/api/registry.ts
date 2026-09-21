@@ -25,7 +25,12 @@ const MIRROR_PROBE_TIMEOUT_MS = 8000;
 async function probeMirror(url) {
     const base = String(url || '').replace(/\/+$/, '');
     if (!base) {
-        return { ok: false, status: 'n/a', kind: 'invalid', error: 'empty url' };
+        return {
+            ok: false,
+            status: 'n/a',
+            kind: 'invalid',
+            error: 'empty url',
+        };
     }
     try {
         const response = await axios({

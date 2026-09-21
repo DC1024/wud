@@ -371,7 +371,9 @@ describe('Docker Hub Registry tests', () => {
                 .mockResolvedValueOnce({ headers: {} }) // probe mirror1 /v2/
                 .mockRejectedValueOnce({ response: { status: 401 } }) // mirror1 manifest
                 .mockResolvedValueOnce({ headers: {} }) // probe mirror2 /v2/
-                .mockResolvedValueOnce({ data: { name: 'nginx', tags: ['latest'] } }); // mirror2 manifest
+                .mockResolvedValueOnce({
+                    data: { name: 'nginx', tags: ['latest'] },
+                }); // mirror2 manifest
 
             const mirror = new Hub();
             await mirror.register('registry', 'hub', 'test', {
@@ -390,9 +392,12 @@ describe('Docker Hub Registry tests', () => {
             // 4 axios calls total: probe1 + fail1 + probe2 + ok2.
             expect(axios).toHaveBeenCalledTimes(4);
             // The second manifest call targeted the good mirror.
-            expect(axios).toHaveBeenNthCalledWith(4, expect.objectContaining({
-                url: 'https://good.example.com/v2/library/nginx/tags/list?n=1000',
-            }));
+            expect(axios).toHaveBeenNthCalledWith(
+                4,
+                expect.objectContaining({
+                    url: 'https://good.example.com/v2/library/nginx/tags/list?n=1000',
+                }),
+            );
         });
 
         test('should re-throw when every mirror fails', async () => {

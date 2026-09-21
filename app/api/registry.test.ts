@@ -79,7 +79,9 @@ describe('API Registry', () => {
             (axios as any).mockReset();
             (axios as any).mockResolvedValue({
                 status: 200,
-                headers: { 'www-authenticate': 'Bearer realm="https://x/v2/token"' },
+                headers: {
+                    'www-authenticate': 'Bearer realm="https://x/v2/token"',
+                },
             });
             mirrorApp = express();
             mirrorApp.use(express.json());
@@ -98,7 +100,9 @@ describe('API Registry', () => {
             const res = await request(mirrorApp).get('/hub/mirrors');
             expect(res.status).toBe(200);
             expect(res.body.ui).toEqual(['https://mirror-a.example.com']);
-            expect(res.body.effective).toEqual(['https://mirror-a.example.com']);
+            expect(res.body.effective).toEqual([
+                'https://mirror-a.example.com',
+            ]);
             expect(res.body.health).toHaveLength(1);
             expect(res.body.health[0].url).toBe('https://mirror-a.example.com');
             expect(res.body.health[0].ok).toBe(true);
@@ -118,11 +122,15 @@ describe('API Registry', () => {
                 'https://mirror-b.example.com',
             ]);
             expect(res.body.ui).toEqual(['https://mirror-b.example.com']);
-            expect(res.body.effective).toEqual(['https://mirror-b.example.com']);
+            expect(res.body.effective).toEqual([
+                'https://mirror-b.example.com',
+            ]);
         });
 
         test('PUT /hub/mirrors rejects non-array body', async () => {
-            const res = await request(mirrorApp).put('/hub/mirrors').send({ mirrors: 'x' });
+            const res = await request(mirrorApp)
+                .put('/hub/mirrors')
+                .send({ mirrors: 'x' });
             expect(res.status).toBe(400);
         });
 
@@ -137,7 +145,9 @@ describe('API Registry', () => {
         });
 
         test('POST /hub/mirrors/test requires a url', async () => {
-            const res = await request(mirrorApp).post('/hub/mirrors/test').send({});
+            const res = await request(mirrorApp)
+                .post('/hub/mirrors/test')
+                .send({});
             expect(res.status).toBe(400);
         });
 
