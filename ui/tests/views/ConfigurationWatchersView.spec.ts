@@ -1,10 +1,15 @@
 import { mount } from '@vue/test-utils';
 import ConfigurationWatchersView from '@/views/ConfigurationWatchersView.vue';
 import * as watcherService from '@/services/watcher';
+import * as containerService from '@/services/container';
 
 jest.mock('@/services/watcher', () => ({
   getAllWatchers: jest.fn(),
   getWatcherIcon: jest.fn(() => 'mdi-update'),
+}));
+
+jest.mock('@/services/container', () => ({
+  getAllContainers: jest.fn(),
 }));
 
 const mockWatchers = [
@@ -25,6 +30,9 @@ const mockWatchers = [
 describe('ConfigurationWatchersView.vue', () => {
   beforeEach(() => {
     (watcherService.getAllWatchers as jest.Mock).mockResolvedValue(mockWatchers);
+    (containerService.getAllContainers as jest.Mock).mockResolvedValue([
+      { watcher: 'local', name: 'whoami', image: 'nginx', state: 'running', watched: true, watchedBy: 'preference' },
+    ]);
   });
 
   it('renders table and handles search filtering', async () => {

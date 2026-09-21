@@ -359,4 +359,75 @@ export default {
     statusInvalid: "invalid",
     readOnlyHint: "Your role only allows reading the mirror list.",
   },
+  servers: {
+    title: "Servers",
+    subtitle:
+      "The Docker daemons WUD connects to. Local is this host's socket; each remote entry is reached through a dedicated SSH tunnel sidecar plus a read-only socket proxy on the target.",
+    add: "Add server",
+    searchServers: "Search servers...",
+    noServers: "No servers found",
+    noServersConfigured:
+      "WUD runs a default local watcher. Add a remote one to monitor other machines.",
+    sourceLocal: "local socket",
+    sourceRemote: "remote",
+    sourceDefault: "default",
+    host: "Host",
+    port: "Port",
+    cron: "Scan schedule",
+    watchedContainers: "watched",
+    reachable: "reachable",
+    unreachable: "unreachable",
+    detailTitle: "Server details",
+    // Add-server wizard
+    wizardTitle: "Add a monitored server",
+    wizardSubtitle:
+      "This wizard prepares everything on the Z4Pro side (SSH key + tunnel sidecar) and hands you the exact commands to run on the target host. The target is never expected to run WUD.",
+    step: "Step {n}",
+    step1Title: "Connection",
+    step1Hint: "Give this server a short name and its SSH endpoint. The tunnel will forward the target's read-only Docker API to Z4Pro.",
+    nameLabel: "Server name",
+    namePlaceholder: "e.g. nas, vps-tx, pi4",
+    sshHostLabel: "SSH host",
+    sshHostPlaceholder: "192.168.1.50 or hostname",
+    sshPortLabel: "SSH port",
+    sshPortPlaceholder: "22",
+    sshUserLabel: "SSH user",
+    sshUserPlaceholder: "root or ubuntu",
+    proxyPortLabel: "Socket proxy port (target side)",
+    proxyPortHint:
+      "The read-only proxy listens on 127.0.0.1:<port> on the target. Pick an unused port, e.g. 2375 or 9000+.",
+    next: "Next",
+    back: "Back",
+    // Step 2 - target side commands
+    step2Title: "Install on the target host",
+    step2Hint:
+      "SSH into the target and run these commands once. They install a dedicated tunnel user and a read-only Docker socket proxy.",
+    copyCommand: "Copy command",
+    copied: "Copied",
+    step2ProxyBlockTitle: "Write the read-only proxy compose file",
+    step2ProxyBlockHint:
+      "Create /opt/wud-remote/docker-compose.yml on the target with this content:",
+    step2UserTitle: "Create the tunnel user and authorize the key",
+    step2UserHint: "Then run (this creates a no-login user and adds the public key):",
+    step2PubkeyTitle: "Public key to authorize (Z4Pro side, already generated)",
+    // Step 3 - Z4Pro side
+    step3Title: "Finish on the Z4Pro",
+    step3Hint:
+      "Add this block to /zspace/applications/services/zdocker/config/compose_config/wud.yaml, then rebuild. Only add a WUD_TRIGGER_DOCKER_<NAME>_* line if you also want WUD to be able to update containers on that server.",
+    copyYaml: "Copy wud.yaml block",
+    step3RebuildTitle: "Rebuild WUD",
+    step3RebuildHint: "Run on the Z4Pro (compose dir shares project name, do NOT use --remove-orphans):",
+    // Remove guide
+    removeTitle: "Remove a server",
+    removeHint:
+      "To remove this server from WUD, tear down its tunnel sidecar and strip the matching watcher block from wud.yaml:",
+    removeSteps: "Remove steps",
+    removeSidecar: "Stop and remove the tunnel sidecar",
+    removeYaml: "Strip the watcher block from wud.yaml, then rebuild",
+    close: "Close",
+    // status labels
+    statusReachable: "reachable",
+    statusUnreachable: "unreachable",
+    statusLocal: "local",
+  },
 };

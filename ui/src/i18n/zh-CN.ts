@@ -352,4 +352,75 @@ export default {
     statusInvalid: "无效",
     readOnlyHint: "你的角色只允许查看镜像源列表。",
   },
+  servers: {
+    title: "服务器",
+    subtitle:
+      "WUD 连接的那些 Docker 守护进程。本地（local）走本机 socket；每台远程主机都通过一条专用 SSH 隧道 sidecar 加对端只读 socket 代理接入。",
+    add: "添加服务器",
+    searchServers: "搜索服务器……",
+    noServers: "未找到服务器",
+    noServersConfigured:
+      "WUD 默认运行一个本地监视器。要监控其它机器，请添加远程服务器。",
+    sourceLocal: "本地 socket",
+    sourceRemote: "远程",
+    sourceDefault: "默认",
+    host: "主机",
+    port: "端口",
+    cron: "扫描计划",
+    watchedContainers: "已监控",
+    reachable: "可达",
+    unreachable: "不可达",
+    detailTitle: "服务器详情",
+    // 添加服务器向导
+    wizardTitle: "添加受监控的服务器",
+    wizardSubtitle:
+      "本向导会在 Z4Pro 侧准备好一切（SSH 密钥 + 隧道 sidecar），并把需要在目标主机上执行的命令交给你。目标主机无需安装 WUD。",
+    step: "第 {n} 步",
+    step1Title: "连接信息",
+    step1Hint:
+      "给这台服务器起个简短的名字并填写其 SSH 端点。隧道会把目标主机只读的 Docker API 转发到 Z4Pro。",
+    nameLabel: "服务器名称",
+    namePlaceholder: "例如 nas、vps-tx、pi4",
+    sshHostLabel: "SSH 主机",
+    sshHostPlaceholder: "192.168.1.50 或主机名",
+    sshPortLabel: "SSH 端口",
+    sshPortPlaceholder: "22",
+    sshUserLabel: "SSH 用户",
+    sshUserPlaceholder: "root 或 ubuntu",
+    proxyPortLabel: "Socket 代理端口（目标侧）",
+    proxyPortHint:
+      "只读代理在目标机的 127.0.0.1:<端口> 上监听。请选一个未占用端口，例如 2375 或 9000 以上。",
+    next: "下一步",
+    back: "上一步",
+    // 第 2 步 - 目标侧命令
+    step2Title: "在目标主机上安装",
+    step2Hint:
+      "SSH 登录目标机，一次性执行以下命令。它们会创建专用隧道账号和只读的 Docker socket 代理。",
+    copyCommand: "复制命令",
+    copied: "已复制",
+    step2ProxyBlockTitle: "写入只读代理的 compose 文件",
+    step2ProxyBlockHint: "在目标机创建 /opt/wud-remote/docker-compose.yml，内容如下：",
+    step2UserTitle: "创建隧道账号并授权公钥",
+    step2UserHint: "然后执行（创建无登录账号并写入公钥）：",
+    step2PubkeyTitle: "要授权的公钥（Z4Pro 侧已生成）",
+    // 第 3 步 - Z4Pro 侧
+    step3Title: "在 Z4Pro 上收尾",
+    step3Hint:
+      "把下面这段追加到 /zspace/applications/services/zdocker/config/compose_config/wud.yaml，然后重建。只有当你希望 WUD 能更新那台服务器的容器时，才额外添加 WUD_TRIGGER_DOCKER_<名称>_* 行。",
+    copyYaml: "复制 wud.yaml 片段",
+    step3RebuildTitle: "重建 WUD",
+    step3RebuildHint: "在 Z4Pro 上执行（compose 目录共用 project 名，切勿加 --remove-orphans）：",
+    // 删除引导
+    removeTitle: "移除服务器",
+    removeHint:
+      "要把它从 WUD 中移除，请拆除其隧道 sidecar，并从 wud.yaml 中删掉对应的监视器片段：",
+    removeSteps: "移除步骤",
+    removeSidecar: "停止并移除隧道 sidecar",
+    removeYaml: "从 wud.yaml 删除监视器片段后重建",
+    close: "关闭",
+    // 状态标签
+    statusReachable: "可达",
+    statusUnreachable: "不可达",
+    statusLocal: "本地",
+  },
 };
